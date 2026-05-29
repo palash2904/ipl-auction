@@ -14,6 +14,10 @@ export class FirebaseAuctionSyncService {
   private unsubscribe?: Unsubscribe;
   private applyingRemote = false;
   private lastSyncedSignature = '';
+  private pendingWrite: AuctionState | null = null;
+  private pendingWriteSignature = '';
+  private writeInFlight = false;
+  private writeTimer?: ReturnType<typeof setTimeout>;
 
   readonly enabled = this.firebase.enabled;
   readonly connected = signal(false);
@@ -30,10 +34,11 @@ export class FirebaseAuctionSyncService {
         this.status.set('Firebase realtime sync active');
         const remoteState = snapshot.data()?.['state'] as AuctionState | undefined;
         if (!remoteState) return;
-        const remoteSignature = this.signature(remoteState);
+        const normalizedRemoteState = this.normalizeState(remoteState);
+        const remoteSignature = this.signature(normalizedRemoteState);
         if (remoteSignature === this.lastSyncedSignature) return;
         this.applyingRemote = true;
-        this.store.applyRemoteState(remoteState);
+        this.store.applyRemoteState(normalizedRemoteState);
         this.lastSyncedSignature = remoteSignature;
         queueMicrotask(() => (this.applyingRemote = false));
       },
@@ -49,23 +54,67 @@ export class FirebaseAuctionSyncService {
       if (this.applyingRemote || !this.roomRef) return;
       const signature = this.signature(state);
       if (signature === this.lastSyncedSignature) return;
-      this.lastSyncedSignature = signature;
-      setDoc(
-        this.roomRef,
-        {
-          updatedAt: Date.now(),
-          state: this.toFirestoreState(state),
-        },
-        { merge: true },
-      ).catch((error: Error) => {
-        this.lastError.set(error.message);
-        this.status.set('Firebase sync error');
-      });
+      this.scheduleWrite(state, signature);
     });
   }
 
   destroy(): void {
     this.unsubscribe?.();
+    if (this.writeTimer) clearTimeout(this.writeTimer);
+  }
+
+  private scheduleWrite(state: AuctionState, signature: string): void {
+    this.pendingWrite = this.toFirestoreState(state);
+    this.pendingWriteSignature = signature;
+    if (this.writeTimer) clearTimeout(this.writeTimer);
+    this.writeTimer = setTimeout(() => {
+      this.writeTimer = undefined;
+      void this.flushWrite();
+    }, 250);
+  }
+
+  private async flushWrite(): Promise<void> {
+    if (this.writeInFlight || !this.roomRef || !this.pendingWrite) return;
+
+    const state = this.pendingWrite;
+    const signature = this.pendingWriteSignature;
+    this.pendingWrite = null;
+    this.pendingWriteSignature = '';
+    this.writeInFlight = true;
+
+    try {
+      await setDoc(
+        this.roomRef,
+        {
+          updatedAt: Date.now(),
+          state,
+        },
+        { merge: true },
+      );
+      this.lastSyncedSignature = signature;
+      this.lastError.set('');
+      this.status.set('Firebase realtime sync active');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Firebase sync error';
+      this.lastError.set(message);
+      this.status.set('Firebase sync error');
+      this.pendingWrite = state;
+      this.pendingWriteSignature = signature;
+      if (!this.writeTimer) {
+        this.writeTimer = setTimeout(() => {
+          this.writeTimer = undefined;
+          void this.flushWrite();
+        }, 1500);
+      }
+    } finally {
+      this.writeInFlight = false;
+      if (this.pendingWrite && !this.writeTimer) {
+        this.writeTimer = setTimeout(() => {
+          this.writeTimer = undefined;
+          void this.flushWrite();
+        }, 250);
+      }
+    }
   }
 
   private signature(state: AuctionState): string {
@@ -75,5 +124,12 @@ export class FirebaseAuctionSyncService {
 
   private toFirestoreState(state: AuctionState): AuctionState {
     return JSON.parse(JSON.stringify(state)) as AuctionState;
+  }
+
+  private normalizeState(state: AuctionState): AuctionState {
+    return {
+      ...state,
+      currentPassTeamIds: state.currentPassTeamIds ?? [],
+    };
   }
 }
