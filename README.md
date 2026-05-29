@@ -1,59 +1,116 @@
-# IplAuction
+# IPL Legends Auction
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.5.
+A complete Angular 20 multiplayer-ready IPL mega auction simulator with live bidding, franchise setup, purse management, overseas slot rules, squad limits, accelerated auction controls, re-auction support, persistence, and PDF-friendly squad export.
 
-## Development server
+## Tech Stack
 
-To start a local development server, run:
+- Angular 20 standalone components
+- TypeScript
+- RxJS timer loop
+- Signal-backed state service
+- Responsive dark IPL auction room styling
+- LocalStorage save/load persistence
+- Optional Firebase Firestore realtime sync
+- Optional Firebase AI Logic commentary
+- Karma/Jasmine unit tests
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Run Locally
 
 ```bash
-ng generate --help
+npm install
+npm start
 ```
 
-## Building
+Open `http://localhost:4200/`.
 
-To build the project run:
+If PowerShell blocks `npm`, use:
 
 ```bash
-ng build
+npm.cmd start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Scripts
 
 ```bash
-ng test
+npm run build
+npm.cmd test -- --watch=false --browsers=ChromeHeadlessNoGpu
 ```
 
-## Running end-to-end tests
+The custom Karma launcher is included because some Windows headless Chrome installs need GPU-disabled flags.
 
-For end-to-end (e2e) testing, run:
+## Firebase Setup
 
-```bash
-ng e2e
+Firebase is enabled in `src/environments/environment.ts` and `src/environments/environment.prod.ts`.
+
+For owner identity, enable **Authentication > Sign-in method > Anonymous** in Firebase Console. If anonymous auth is not enabled, the app still creates a local browser id, but authenticated security rules will need Auth enabled.
+
+Suggested starter Firestore rule for private testing:
+
+```text
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /auctionRooms/{roomId} {
+      allow read, write: if true;
+      match /members/{memberId} {
+        allow read, write: if true;
+      }
+    }
+  }
+}
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Tighten this before sharing publicly, ideally with Firebase Auth and owner-only bid validation.
 
-## Additional Resources
+## Project Structure
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```text
+src/app/
+  core/
+    guards/
+    services/
+  features/
+    auction/
+      data/
+    dashboard/
+    multiplayer/
+    setup/
+    summary/
+  models/
+  shared/
+    pipes/
+```
+
+## Features
+
+- Setup page for 2 to 8 franchises with duplicate owner/franchise validation
+- Team-owner-only join screen
+- Each team can be claimed by one connected owner
+- Team owners can place bids only for their selected franchise
+- Firestore-powered shared auction room when Firebase is enabled
+- Exact IPL-style auction sets from marquee legends through hall of fame legends
+- Live auction room with current player card, bid table, countdown, highest bidder flash, bid history, and commentary
+- Bid increments:
+  - Under Rs 2 Cr: Rs 0.25 Cr
+  - Rs 2-5 Cr: Rs 0.50 Cr
+  - Above Rs 5 Cr: Rs 1 Cr
+  - Above Rs 15 Cr: Rs 2 Cr
+- Rule enforcement for purse, overseas slots, squad size, and player status
+- Countdown auto-sale or auto-unsold
+- Pause/resume, undo last bid, accelerated phase, re-auction phase
+- AI live commentary through Firebase AI Logic, with local fallback
+- Team dashboard with purse, squad, overseas usage, total spent, players table, and composition bars
+- Auction summary with PDF export through browser print
+- Sound cues for bids and sold events
+- Local save/load auction state
+
+## Tests
+
+Coverage includes:
+
+- Auction increment rules
+- Franchise setup constraints
+- Sale and purse updates
+- Full-squad bid prevention
+- Setup duplicate validation
+- Root shell rendering
