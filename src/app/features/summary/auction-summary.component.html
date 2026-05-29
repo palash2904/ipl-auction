@@ -1,0 +1,37 @@
+<section class="content-page">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Final ledger</p>
+      <h1>Auction Summary</h1>
+    </div>
+    <button class="btn primary" type="button" (click)="store.exportSquads()">Export Squads to PDF</button>
+  </div>
+
+  <div class="summary-metrics">
+    <div><span>Sold</span><strong>{{ store.soldPlayers().length }}</strong></div>
+    <div><span>Unsold</span><strong>{{ store.unsoldPlayers().length }}</strong></div>
+    <div><span>Available</span><strong>{{ store.availablePlayers().length }}</strong></div>
+    <div><span>Phase</span><strong>{{ store.state().phase }}</strong></div>
+  </div>
+
+  <div class="dashboard-grid">
+    @for (team of store.state().franchises; track team.id) {
+      <article class="team-card">
+        <div class="team-card-head">
+          <span class="team-logo">{{ team.logoEmoji }}</span>
+          <div>
+            <h2>{{ team.franchiseName }}</h2>
+            <p>{{ store.totalSpent(team) | crore }} spent · {{ team.purseRemaining | crore }} left</p>
+          </div>
+        </div>
+        <div class="chip-row">
+          @for (player of store.playersForTeam(team.id); track player.id) {
+            <span>{{ player.name }} · {{ player.soldPrice | crore }}</span>
+          } @empty {
+            <span>No purchases</span>
+          }
+        </div>
+      </article>
+    }
+  </div>
+</section>

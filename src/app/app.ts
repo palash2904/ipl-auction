@@ -1,12 +1,18 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { UpperCasePipe } from '@angular/common';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuctionStore } from './core/services/auction-store.service';
+import { FirebaseAuctionSyncService } from './core/services/firebase-auction-sync.service';
+import { MultiplayerSessionService } from './core/services/multiplayer-session.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, UpperCasePipe],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('ipl-auction');
+  protected readonly store = inject(AuctionStore);
+  protected readonly sync = inject(FirebaseAuctionSyncService);
+  protected readonly session = inject(MultiplayerSessionService);
 }

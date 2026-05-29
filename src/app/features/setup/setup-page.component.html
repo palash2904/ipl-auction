@@ -1,0 +1,60 @@
+<section class="page-grid setup-hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Mega auction setup</p>
+    <h1>Build the room, set the purses, start the bidding.</h1>
+    <p>
+      Configure 2 to 8 franchises. Every team starts with Rs 120 Cr, 8 overseas slots,
+      and a 25-player squad limit.
+    </p>
+    <div class="hero-actions">
+      <button class="btn primary" type="button" (click)="startAuction()">Start Auction</button>
+      <button class="btn ghost" type="button" (click)="loadSaved()">Load Saved</button>
+      <button class="icon-btn" type="button" title="Reset saved auction" (click)="reset()">↺</button>
+    </div>
+  </div>
+
+  <form class="setup-panel" [formGroup]="form" (ngSubmit)="startAuction()">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Franchises</p>
+        <h2>{{ teams.length }} teams registered</h2>
+      </div>
+      <div class="toolbar">
+        <button class="icon-btn" type="button" title="Remove team" (click)="removeTeam(teams.length - 1)" [disabled]="!canRemove()">−</button>
+        <button class="icon-btn" type="button" title="Add team" (click)="addTeam()" [disabled]="!canAdd()">+</button>
+      </div>
+    </div>
+
+    @if (hasDuplicates()) {
+      <div class="alert">{{ duplicateMessage() }}</div>
+    }
+
+    <div class="team-form-grid" formArrayName="teams">
+      @for (team of teams.controls; track team; let index = $index) {
+        <article class="team-form-card" [formGroupName]="index">
+          <div class="team-form-title">
+            <span class="logo-preview">{{ team.controls.logoEmoji.value }}</span>
+            <strong>Team {{ index + 1 }}</strong>
+          </div>
+          <label>
+            Owner name
+            <input formControlName="ownerName" placeholder="Owner name" />
+          </label>
+          <label>
+            Franchise name
+            <input formControlName="franchiseName" placeholder="Franchise name" />
+          </label>
+          <label>
+            Logo emoji
+            <input formControlName="logoEmoji" maxlength="4" placeholder="🏏" />
+          </label>
+          <dl>
+            <div><dt>Purse</dt><dd>Rs 120 Cr</dd></div>
+            <div><dt>Overseas</dt><dd>8 max</dd></div>
+            <div><dt>Squad</dt><dd>25 max</dd></div>
+          </dl>
+        </article>
+      }
+    </div>
+  </form>
+</section>

@@ -1,0 +1,28 @@
+<section class="content-page">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Second chance desk</p>
+      <h1>Unsold / Re-auction</h1>
+    </div>
+    <button class="btn primary" type="button" (click)="store.startReauction()" [disabled]="store.unsoldPlayers().length === 0">
+      Start Re-auction
+    </button>
+  </div>
+
+  <div class="player-grid">
+    @for (player of store.unsoldPlayers(); track player.id) {
+      <button class="mini-player" type="button" (click)="store.selectPlayer(player.id)">
+        <img [src]="player.image" [alt]="player.name" />
+        <span>
+          <strong>{{ player.name }}</strong>
+          <small>{{ player.role }} · Base {{ player.basePrice | crore }}</small>
+        </span>
+      </button>
+    } @empty {
+      <article class="empty-state">
+        <h2>No unsold players yet</h2>
+        <p>Players marked unsold in the live room will appear here.</p>
+      </article>
+    }
+  </div>
+</section>

@@ -1,0 +1,55 @@
+<section class="content-page join-page">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Multiplayer room</p>
+      <h1>Join the Auction</h1>
+    </div>
+  </div>
+
+  <form class="join-panel" [formGroup]="form" (ngSubmit)="join()">
+    <label>
+      Display name
+      <input formControlName="displayName" placeholder="Your name" />
+    </label>
+
+    <div class="team-claim-grid">
+      @for (team of store.state().franchises; track team.id) {
+        <button
+          class="purse-row"
+          type="button"
+          [class.leading]="form.controls.teamId.value === team.id"
+          [disabled]="session.isTeamClaimed(team.id)"
+          (click)="form.controls.teamId.setValue(team.id)"
+        >
+          <span class="team-avatar">{{ team.logoEmoji }}</span>
+          <span>
+            <strong>{{ team.franchiseName }}</strong>
+            <small>
+              {{ session.isTeamClaimed(team.id) ? 'Already claimed' : 'Available' }} · Owner {{ team.ownerName }}
+            </small>
+          </span>
+        </button>
+      }
+    </div>
+
+    @if (session.error()) {
+      <div class="alert">{{ session.error() }}</div>
+    }
+
+    <button class="btn primary" type="submit" [disabled]="joining">
+      {{ joining ? 'Joining...' : 'Join as Team Owner' }}
+    </button>
+  </form>
+
+  <aside class="join-panel">
+    <h2>Connected Members</h2>
+    @for (member of session.members(); track member.uid) {
+      <div class="history-row">
+        <span>{{ member.displayName }}</span>
+        <strong>Owner</strong>
+      </div>
+    } @empty {
+      <p class="muted">Members appear here after they join.</p>
+    }
+  </aside>
+</section>
