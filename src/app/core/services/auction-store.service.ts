@@ -17,6 +17,7 @@ const initialState = (): AuctionState => ({
   players: structuredClone(AUCTION_PLAYERS),
   currentPlayerId: null,
   currentBid: null,
+  currentPassTeamIds: [],
   bidHistory: [],
   auctionLog: [],
   phase: 'setup',
@@ -105,6 +106,29 @@ export class AuctionStore {
     return null;
   }
 
+  pass(teamId: string): string | null {
+    const state = this.state();
+    const player = this.currentPlayer();
+    const team = state.franchises.find((item) => item.id === teamId);
+    if (!player || !team) return 'No active player selected.';
+    if (player.status !== 'available') return 'Player is no longer available.';
+    if (state.currentBid?.teamId === team.id) return 'Leading team cannot pass after bidding.';
+    if (state.currentPassTeamIds.includes(team.id)) return `${team.franchiseName} already passed.`;
+
+    const passTeamIds = [...state.currentPassTeamIds, team.id];
+    this.stateSignal.update((current) => ({
+      ...current,
+      currentPassTeamIds: passTeamIds,
+      auctionLog: [this.log(`${team.franchiseName} passes on ${player.name}`), ...current.auctionLog],
+    }));
+
+    if (!state.currentBid && passTeamIds.length === state.franchises.length) {
+      this.markUnsold();
+    }
+
+    return null;
+  }
+
   markUnsold(): void {
     const player = this.currentPlayer();
     if (!player || player.status !== 'available') return;
@@ -114,6 +138,7 @@ export class AuctionStore {
         item.id === player.id ? { ...item, status: 'unsold', soldTo: null, soldPrice: 0 } : item,
       ),
       currentBid: null,
+      currentPassTeamIds: [],
       goingStage: 0,
       auctionLog: [this.log(`${player.name} goes unsold`), ...state.auctionLog],
     }));
@@ -143,6 +168,7 @@ export class AuctionStore {
           : team,
       ),
       currentBid: null,
+      currentPassTeamIds: [],
       goingStage: 0,
       auctionLog: [this.log(`SOLD: ${player.name} to ${bid.teamName} for ${this.money(bid.amount)}`), ...current.auctionLog],
     }));
@@ -158,6 +184,7 @@ export class AuctionStore {
         currentPlayerId: next?.id ?? null,
         phase: next ? state.phase : 'complete',
         currentBid: null,
+        currentPassTeamIds: [],
         goingStage: 0,
       };
     });
@@ -170,6 +197,7 @@ export class AuctionStore {
       ...state,
       currentPlayerId: player.id,
       currentBid: null,
+      currentPassTeamIds: [],
       goingStage: 0,
     }));
   }
@@ -184,6 +212,7 @@ export class AuctionStore {
       ),
       currentPlayerId: [...unsoldIds][0] ?? state.currentPlayerId,
       currentBid: null,
+      currentPassTeamIds: [],
       auctionLog: [this.log('Re-auction phase opened for unsold players'), ...state.auctionLog],
     }));
   }
@@ -224,7 +253,7 @@ export class AuctionStore {
   loadSavedState(): boolean {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return false;
-    this.stateSignal.set(JSON.parse(saved) as AuctionState);
+    this.stateSignal.set(this.normalizeState(JSON.parse(saved) as Partial<AuctionState>));
     return true;
   }
 
@@ -234,7 +263,7 @@ export class AuctionStore {
   }
 
   applyRemoteState(state: AuctionState): void {
-    this.stateSignal.set(state);
+    this.stateSignal.set(this.normalizeState(state));
   }
 
   exportSquads(): void {
@@ -261,12 +290,27 @@ export class AuctionStore {
     return player ? this.validateBid(team, player) : 'Auction complete.';
   }
 
+  passErrorFor(team: Franchise): string | null {
+    const player = this.currentPlayer();
+    const state = this.state();
+    if (!player) return 'Auction complete.';
+    if (player.status !== 'available') return 'Player is no longer available.';
+    if (state.currentBid?.teamId === team.id) return 'Leading team cannot pass after bidding.';
+    if (state.currentPassTeamIds.includes(team.id)) return 'Team already passed.';
+    return null;
+  }
+
+  hasPassed(teamId: string): boolean {
+    return this.state().currentPassTeamIds.includes(teamId);
+  }
+
   nextBidAmount(current: number): number {
     return Number((current + this.incrementFor(current)).toFixed(2));
   }
 
   private validateBid(team: Franchise, player: Player): string | null {
     if (player.status !== 'available') return 'Player is no longer available.';
+    if (this.state().currentPassTeamIds.includes(team.id)) return 'Team already passed on this player.';
     if (team.playerIds.length >= team.maxSquadSize) return 'Squad already has 25 players.';
     if (player.overseas && this.overseasUsed(team.id) >= team.overseasSlotsMax) return 'Overseas slots are full.';
     const next = this.nextBidAmount(this.state().currentBid?.amount ?? player.basePrice - this.incrementFor(player.basePrice));
@@ -285,10 +329,15 @@ export class AuctionStore {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return initialState();
     try {
-      return JSON.parse(saved) as AuctionState;
+      const savedState = JSON.parse(saved) as Partial<AuctionState>;
+      return this.normalizeState(savedState);
     } catch {
       return initialState();
     }
+  }
+
+  private normalizeState(state: Partial<AuctionState>): AuctionState {
+    return { ...initialState(), ...state, currentPassTeamIds: state.currentPassTeamIds ?? [] };
   }
 
   private log(message: string): AuctionLogEntry {

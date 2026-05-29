@@ -64,4 +64,25 @@ describe('AuctionStore', () => {
 
     expect(store.bid(team.id)).toContain('Squad already has 25 players');
   });
+
+  it('lets a franchise pass on the current player and blocks later bids for that player', () => {
+    const team = store.state().franchises[0];
+
+    expect(store.pass(team.id)).toBeNull();
+
+    expect(store.hasPassed(team.id)).toBeTrue();
+    expect(store.bid(team.id)).toContain('Team already passed on this player');
+  });
+
+  it('marks the player unsold when every franchise passes without a bid', () => {
+    const player = store.currentPlayer();
+
+    store.state().franchises.forEach((team) => {
+      store.pass(team.id);
+    });
+
+    const passedPlayer = store.state().players.find((item) => item.id === player?.id);
+    expect(passedPlayer?.status).toBe('unsold');
+    expect(store.state().currentPassTeamIds).toEqual([]);
+  });
 });

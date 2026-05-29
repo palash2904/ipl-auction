@@ -70,20 +70,39 @@
     </div>
     <div class="purse-list">
       @for (team of store.state().franchises; track team.id) {
-        <button
+        <div
           class="purse-row"
-          type="button"
-          (click)="bid(team.id)"
           [class.leading]="store.state().currentBid?.teamId === team.id"
-          [disabled]="!!store.bidErrorFor(team) || !session.canBid(team.id)"
-          [title]="store.bidErrorFor(team) || (session.canBid(team.id) ? 'Bid now' : 'Only this team owner can bid')"
         >
           <span class="team-avatar">{{ team.logoEmoji }}</span>
-          <span>
+          <span class="team-summary">
             <strong>{{ team.franchiseName }}</strong>
             <small>{{ team.purseRemaining | crore }} · {{ team.playerIds.length }}/25 squad · {{ store.overseasUsed(team.id) }}/8 overseas</small>
+            @if (store.hasPassed(team.id)) {
+              <small class="pass-status">Passed this player</small>
+            }
           </span>
-        </button>
+          <span class="paddle-actions">
+            <button
+              class="btn primary compact"
+              type="button"
+              (click)="bid(team.id)"
+              [disabled]="!!store.bidErrorFor(team) || !session.canBid(team.id)"
+              [title]="store.bidErrorFor(team) || (session.canBid(team.id) ? 'Bid now' : 'Only this team owner can bid')"
+            >
+              Bid
+            </button>
+            <button
+              class="btn ghost compact"
+              type="button"
+              (click)="pass(team.id)"
+              [disabled]="!!store.passErrorFor(team) || !session.canBid(team.id)"
+              [title]="store.passErrorFor(team) || (session.canBid(team.id) ? 'Pass' : 'Only this team owner can pass')"
+            >
+              Pass
+            </button>
+          </span>
+        </div>
       }
     </div>
 

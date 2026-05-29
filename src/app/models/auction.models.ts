@@ -62,6 +62,7 @@ export interface AuctionState {
   players: Player[];
   currentPlayerId: string | null;
   currentBid: Bid | null;
+  currentPassTeamIds: string[];
   bidHistory: Bid[];
   auctionLog: AuctionLogEntry[];
   phase: AuctionPhase;

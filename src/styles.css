@@ -222,6 +222,12 @@ h2 {
   padding: 0;
 }
 
+.btn.compact {
+  min-height: 2.25rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.8rem;
+}
+
 .btn.primary {
   border-color: rgba(248, 201, 74, 0.55);
   background: var(--gold);
@@ -489,6 +495,29 @@ dd {
   background: #0b1220;
   color: var(--text);
   text-align: left;
+}
+
+.team-summary {
+  min-width: 0;
+  flex: 1;
+}
+
+.team-summary strong,
+.team-summary small {
+  display: block;
+}
+
+.pass-status {
+  margin-top: 0.25rem;
+  color: var(--gold) !important;
+  font-weight: 800;
+}
+
+.paddle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
 }
 
 .purse-row.leading {

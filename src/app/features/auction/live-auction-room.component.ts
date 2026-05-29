@@ -29,6 +29,15 @@ export class LiveAuctionRoomComponent {
     this.bidError = error ?? '';
   }
 
+  pass(teamId: string): void {
+    if (!this.session.canBid(teamId)) {
+      this.bidError = 'Join as this team owner to pass for that team.';
+      return;
+    }
+    const error = this.store.pass(teamId);
+    this.bidError = error ?? '';
+  }
+
   sell(): void {
     if (!this.session.canControlAuction()) return;
     this.soldFlash = true;
