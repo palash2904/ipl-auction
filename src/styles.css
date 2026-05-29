@@ -385,32 +385,6 @@ dd {
   min-width: 0;
 }
 
-.timer {
-  display: grid;
-  width: 6.5rem;
-  height: 6.5rem;
-  place-items: center;
-  border: 1px solid rgba(36, 208, 255, 0.45);
-  border-radius: 50%;
-  background: #0e1728;
-}
-
-.timer span {
-  font-size: 2.3rem;
-  font-weight: 950;
-}
-
-.timer small {
-  margin-top: -1.2rem;
-  color: var(--muted);
-}
-
-.timer.warning {
-  border-color: var(--red);
-  color: #ffb9c2;
-  animation: flash 0.8s infinite alternate;
-}
-
 .player-card {
   position: relative;
   overflow: hidden;

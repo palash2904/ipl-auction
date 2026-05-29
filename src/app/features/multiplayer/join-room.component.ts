@@ -17,19 +17,31 @@ export class JoinRoomComponent {
   protected readonly store = inject(AuctionStore);
   protected readonly session = inject(MultiplayerSessionService);
   protected joining = false;
+  protected joinError = '';
 
   protected readonly form = this.fb.nonNullable.group({
-    displayName: ['', [Validators.required, Validators.minLength(2)]],
+    displayName: [''],
     teamId: ['', Validators.required],
   });
 
   protected async join(): Promise<void> {
     this.form.markAllAsTouched();
-    if (this.form.invalid) return;
+    this.joinError = '';
+    if (!this.form.controls.teamId.value) {
+      this.joinError = 'Select your franchise first.';
+      return;
+    }
 
     this.joining = true;
-    await this.session.join(this.form.controls.displayName.value, this.form.controls.teamId.value);
-    this.joining = false;
-    this.router.navigateByUrl('/auction');
+    const team = this.store.state().franchises.find((item) => item.id === this.form.controls.teamId.value);
+    const displayName = this.form.controls.displayName.value || team?.ownerName || team?.franchiseName || 'Team Owner';
+    try {
+      await this.session.join(displayName, this.form.controls.teamId.value);
+      this.router.navigateByUrl('/auction');
+    } catch (error) {
+      this.joinError = error instanceof Error ? error.message : 'Unable to join right now.';
+    } finally {
+      this.joining = false;
+    }
   }
 }

@@ -35,6 +35,9 @@
     @if (session.error()) {
       <div class="alert">{{ session.error() }}</div>
     }
+    @if (joinError) {
+      <div class="alert">{{ joinError }}</div>
+    }
 
     <button class="btn primary" type="submit" [disabled]="joining">
       {{ joining ? 'Joining...' : 'Join as Team Owner' }}

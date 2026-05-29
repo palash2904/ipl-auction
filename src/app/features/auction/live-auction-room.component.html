@@ -5,10 +5,6 @@
         <p class="eyebrow">{{ store.currentSetTitle() }}</p>
         <h1>Live Auction Room</h1>
       </div>
-      <div class="timer" [class.warning]="store.state().countdown <= 6">
-        <span>{{ store.state().countdown }}</span>
-        <small>seconds</small>
-      </div>
     </div>
 
     @if (store.currentPlayer(); as player) {
@@ -30,11 +26,7 @@
             <span>{{ player.stats?.wickets || 0 }} wickets</span>
           </div>
           <div class="live-commentary">
-            @if (store.state().goingStage === 2) {
-              Going twice...
-            } @else if (store.state().goingStage === 1) {
-              Going once...
-            } @else if (store.state().currentBid) {
+            @if (store.state().currentBid) {
               {{ store.state().currentBid?.teamName }} leads the table.
             } @else {
               Opening at base price. Awaiting first paddle.
@@ -50,9 +42,6 @@
         <button class="btn primary" type="button" (click)="sell()" [disabled]="!store.state().currentBid || !session.canControlAuction()">Sold</button>
         <button class="btn danger" type="button" (click)="unsold()" [disabled]="!session.canControlAuction()">Unsold</button>
         <button class="btn ghost" type="button" (click)="store.undoLastBid()" [disabled]="!session.canControlAuction()">Undo Bid</button>
-        <button class="btn ghost" type="button" (click)="store.togglePause()" [disabled]="!session.canControlAuction()">
-          {{ store.state().paused ? 'Resume' : 'Pause' }}
-        </button>
         <button class="btn ghost" type="button" (click)="store.toggleAccelerated()" [disabled]="!session.canControlAuction()">
           {{ store.state().accelerated ? 'Standard' : 'Accelerated' }}
         </button>

@@ -89,14 +89,14 @@ src/app/
 - Team owners can place bids only for their selected franchise
 - Firestore-powered shared auction room when Firebase is enabled
 - Exact IPL-style auction sets from marquee legends through hall of fame legends
-- Live auction room with current player card, bid table, countdown, highest bidder flash, bid history, and commentary
+- Live auction room with current player card, bid table, highest bidder flash, bid history, and commentary
 - Bid increments:
   - Under Rs 2 Cr: Rs 0.25 Cr
   - Rs 2-5 Cr: Rs 0.50 Cr
   - Above Rs 5 Cr: Rs 1 Cr
   - Above Rs 15 Cr: Rs 2 Cr
 - Rule enforcement for purse, overseas slots, squad size, and player status
-- Countdown auto-sale or auto-unsold
+- Manual Sold and Unsold controls for moving the auction forward
 - Pause/resume, undo last bid, accelerated phase, re-auction phase
 - AI live commentary through Firebase AI Logic, with local fallback
 - Team dashboard with purse, squad, overseas usage, total spent, players table, and composition bars

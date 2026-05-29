@@ -1,5 +1,4 @@
 import { computed, effect, Injectable, signal } from '@angular/core';
-import { interval, Subscription } from 'rxjs';
 import { AUCTION_PLAYERS } from '../../features/auction/data/players.data';
 import {
   AuctionLogEntry,
@@ -12,7 +11,6 @@ import {
 
 const STARTING_PURSE = 120;
 const STORAGE_KEY = 'ipl-legends-auction-state';
-const COUNTDOWN_SECONDS = 15;
 
 const initialState = (): AuctionState => ({
   franchises: [],
@@ -23,7 +21,7 @@ const initialState = (): AuctionState => ({
   auctionLog: [],
   phase: 'setup',
   paused: false,
-  countdown: COUNTDOWN_SECONDS,
+  countdown: 0,
   goingStage: 0,
   accelerated: false,
 });
@@ -31,7 +29,6 @@ const initialState = (): AuctionState => ({
 @Injectable({ providedIn: 'root' })
 export class AuctionStore {
   private readonly stateSignal = signal<AuctionState>(this.loadState());
-  private ticker?: Subscription;
   private lastBidSnapshot: AuctionState | null = null;
 
   readonly state = this.stateSignal.asReadonly();
@@ -52,7 +49,6 @@ export class AuctionStore {
     effect(() => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.stateSignal()));
     });
-    this.ensureTicker();
   }
 
   setupAuction(teams: TeamFormValue[]): void {
@@ -102,7 +98,6 @@ export class AuctionStore {
       ...current,
       currentBid: bid,
       bidHistory: [bid, ...current.bidHistory],
-      countdown: COUNTDOWN_SECONDS,
       goingStage: 0,
       auctionLog: [this.log(`${team.franchiseName} bids ${this.money(amount)} for ${player.name}`), ...current.auctionLog],
     }));
@@ -119,7 +114,6 @@ export class AuctionStore {
         item.id === player.id ? { ...item, status: 'unsold', soldTo: null, soldPrice: 0 } : item,
       ),
       currentBid: null,
-      countdown: COUNTDOWN_SECONDS,
       goingStage: 0,
       auctionLog: [this.log(`${player.name} goes unsold`), ...state.auctionLog],
     }));
@@ -149,7 +143,6 @@ export class AuctionStore {
           : team,
       ),
       currentBid: null,
-      countdown: COUNTDOWN_SECONDS,
       goingStage: 0,
       auctionLog: [this.log(`SOLD: ${player.name} to ${bid.teamName} for ${this.money(bid.amount)}`), ...current.auctionLog],
     }));
@@ -165,7 +158,6 @@ export class AuctionStore {
         currentPlayerId: next?.id ?? null,
         phase: next ? state.phase : 'complete',
         currentBid: null,
-        countdown: COUNTDOWN_SECONDS,
         goingStage: 0,
       };
     });
@@ -178,7 +170,6 @@ export class AuctionStore {
       ...state,
       currentPlayerId: player.id,
       currentBid: null,
-      countdown: COUNTDOWN_SECONDS,
       goingStage: 0,
     }));
   }
@@ -288,25 +279,6 @@ export class AuctionStore {
     if (amount > 5) return 1;
     if (amount >= 2) return 0.5;
     return 0.25;
-  }
-
-  private ensureTicker(): void {
-    this.ticker?.unsubscribe();
-    this.ticker = interval(1000).subscribe(() => {
-      const state = this.state();
-      if (state.paused || state.phase === 'setup' || state.phase === 'complete' || !state.currentPlayerId) return;
-      if (state.countdown <= 1) {
-        if (state.currentBid) {
-          this.sellCurrentPlayer();
-        } else {
-          this.markUnsold();
-        }
-        return;
-      }
-      const nextCountdown = state.countdown - 1;
-      const goingStage = nextCountdown <= 3 ? 2 : nextCountdown <= 6 ? 1 : 0;
-      this.stateSignal.update((current) => ({ ...current, countdown: nextCountdown, goingStage }));
-    });
   }
 
   private loadState(): AuctionState {
