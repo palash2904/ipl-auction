@@ -16,6 +16,7 @@ export class FirebaseAuctionSyncService {
   private lastSyncedSignature = '';
   private pendingWrite: AuctionState | null = null;
   private pendingWriteSignature = '';
+  private writeInFlightSignature = '';
   private writeInFlight = false;
   private writeTimer?: ReturnType<typeof setTimeout>;
 
@@ -37,6 +38,12 @@ export class FirebaseAuctionSyncService {
         const normalizedRemoteState = this.normalizeState(remoteState);
         const remoteSignature = this.signature(normalizedRemoteState);
         if (remoteSignature === this.lastSyncedSignature) return;
+        if (this.hasLocalWritePending()) {
+          if (remoteSignature === this.pendingWriteSignature || remoteSignature === this.writeInFlightSignature) {
+            this.lastSyncedSignature = remoteSignature;
+          }
+          return;
+        }
         this.applyingRemote = true;
         this.store.applyRemoteState(normalizedRemoteState);
         this.lastSyncedSignature = remoteSignature;
@@ -80,6 +87,7 @@ export class FirebaseAuctionSyncService {
     const signature = this.pendingWriteSignature;
     this.pendingWrite = null;
     this.pendingWriteSignature = '';
+    this.writeInFlightSignature = signature;
     this.writeInFlight = true;
 
     try {
@@ -92,6 +100,7 @@ export class FirebaseAuctionSyncService {
         { merge: true },
       );
       this.lastSyncedSignature = signature;
+      this.writeInFlightSignature = '';
       this.lastError.set('');
       this.status.set('Firebase realtime sync active');
     } catch (error) {
@@ -108,6 +117,7 @@ export class FirebaseAuctionSyncService {
       }
     } finally {
       this.writeInFlight = false;
+      if (!this.pendingWrite) this.writeInFlightSignature = '';
       if (this.pendingWrite && !this.writeTimer) {
         this.writeTimer = setTimeout(() => {
           this.writeTimer = undefined;
@@ -120,6 +130,10 @@ export class FirebaseAuctionSyncService {
   private signature(state: AuctionState): string {
     const { countdown, goingStage, ...stableState } = state;
     return JSON.stringify(stableState);
+  }
+
+  private hasLocalWritePending(): boolean {
+    return !!this.pendingWriteSignature || !!this.writeInFlightSignature || this.writeInFlight;
   }
 
   private toFirestoreState(state: AuctionState): AuctionState {
