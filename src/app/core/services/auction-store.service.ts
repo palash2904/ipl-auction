@@ -156,7 +156,6 @@ export class AuctionStore {
     const team = state.franchises.find((item) => item.id === teamId);
     if (!player || !team) return 'No active player selected.';
     if (player.status !== 'available') return 'Player is no longer available.';
-    if (this.highestBidderFor(state) === team.id) return 'Highest bidder cannot pass after bidding.';
     if (!state.activeBidderIds.includes(team.id)) return `${team.franchiseName} is not active for this player.`;
     if (state.passedBidderIds.includes(team.id)) return `${team.franchiseName} already passed.`;
 
@@ -362,7 +361,6 @@ export class AuctionStore {
     const state = this.state();
     if (!player) return 'Auction complete.';
     if (player.status !== 'available') return 'Player is no longer available.';
-    if (this.highestBidderFor(state) === team.id) return 'Highest bidder cannot pass after bidding.';
     if (state.passedBidderIds.includes(team.id)) return 'Team already passed.';
     if (!state.activeBidderIds.includes(team.id)) return 'Team is not active for this player.';
     return null;
@@ -412,21 +410,19 @@ export class AuctionStore {
 
   private resolveCurrentPlayer(): void {
     const state = this.state();
+    if (this.highestBidderFor(state) && this.canAutoSell(state)) {
+      this.scheduleAutoSell(state.currentPlayerId, this.highestBidderFor(state));
+      return;
+    }
     if (!this.highestBidderFor(state) && state.activeBidderIds.length === 0) {
       this.markUnsold();
       return;
     }
-    if (this.canAutoSell(state)) {
-      this.scheduleAutoSell(state.currentPlayerId, this.highestBidderFor(state));
-    }
   }
 
   private canAutoSell(state: AuctionState): boolean {
-    return (
-      this.highestBidderFor(state) !== null &&
-      state.activeBidderIds.length === 1 &&
-      state.activeBidderIds[0] === this.highestBidderFor(state)
-    );
+    const highestBidderId = this.highestBidderFor(state);
+    return highestBidderId !== null && state.activeBidderIds.every((teamId) => teamId === highestBidderId);
   }
 
   private scheduleAutoSell(playerId: string | null, bidderId: string | null): void {
