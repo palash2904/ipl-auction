@@ -146,21 +146,16 @@ export class AuctionStore {
   markUnsold(): void {
     const player = this.currentPlayer();
     if (!player || player.status !== 'available') return;
-    this.stateSignal.update((state) => ({
-      ...state,
-      players: state.players.map((item) =>
+    this.stateSignal.update((state) => {
+      const players = state.players.map((item): Player =>
         item.id === player.id ? { ...item, status: 'unsold', soldTo: null, soldPrice: 0 } : item,
-      ),
-      currentBid: null,
-      activeBidderIds: [],
-      passedBidderIds: [],
-      highestBidderId: null,
-      currentBidAmount: 0,
-      currentPassTeamIds: [],
-      goingStage: 0,
-      auctionLog: [this.log(`${player.name} goes unsold`), ...state.auctionLog],
-    }));
-    this.nextPlayer();
+      );
+      return this.advanceAfterSettlement({
+        ...state,
+        players,
+        auctionLog: [this.log(`${player.name} goes unsold`), ...state.auctionLog],
+      }, player.id);
+    });
   }
 
   sellCurrentPlayer(): void {
@@ -169,14 +164,13 @@ export class AuctionStore {
     const bid = state.currentBid;
     if (!player || !bid || player.status !== 'available' || !this.canAutoSell(state)) return;
 
-    this.stateSignal.update((current) => ({
-      ...current,
-      players: current.players.map((item) =>
+    this.stateSignal.update((current) => {
+      const players = current.players.map((item): Player =>
         item.id === player.id
           ? { ...item, status: 'sold', soldTo: bid.teamId, soldPrice: bid.amount }
           : item,
-      ),
-      franchises: current.franchises.map((team) =>
+      );
+      const franchises = current.franchises.map((team) =>
         team.id === bid.teamId
           ? {
               ...team,
@@ -184,18 +178,15 @@ export class AuctionStore {
               playerIds: [...team.playerIds, player.id],
             }
           : team,
-      ),
-      currentBid: null,
-      activeBidderIds: [],
-      passedBidderIds: [],
-      highestBidderId: null,
-      currentBidAmount: 0,
-      currentPassTeamIds: [],
-      goingStage: 0,
-      auctionLog: [this.log(`SOLD: ${player.name} to ${bid.teamName} for ${this.money(bid.amount)}`), ...current.auctionLog],
-    }));
+      );
+      return this.advanceAfterSettlement({
+        ...current,
+        players,
+        franchises,
+        auctionLog: [this.log(`SOLD: ${player.name} to ${bid.teamName} for ${this.money(bid.amount)}`), ...current.auctionLog],
+      }, player.id);
+    });
     this.playTone(260, 0.14);
-    setTimeout(() => this.nextPlayer(), 900);
   }
 
   nextPlayer(): void {
@@ -423,6 +414,18 @@ export class AuctionStore {
     };
   }
 
+  private advanceAfterSettlement(state: AuctionState, settledPlayerId: string): AuctionState {
+    const next = state.players.find((player) => player.status === 'available' && player.id !== settledPlayerId);
+    return this.preparePlayerAuction(
+      {
+        ...state,
+        currentPlayerId: next?.id ?? null,
+        phase: next ? state.phase : 'complete',
+      },
+      next?.id ?? null,
+    );
+  }
+
   private isEligibleForPlayer(team: Franchise, player: Player, players: Player[]): boolean {
     if (team.playerIds.length >= team.maxSquadSize) return false;
     if (team.purseRemaining < player.basePrice) return false;
@@ -463,6 +466,10 @@ export class AuctionStore {
     if (normalized.currentPlayerId && normalized.currentBidAmount === 0) {
       const player = normalized.players.find((item) => item.id === normalized.currentPlayerId);
       normalized.currentBidAmount = player?.basePrice ?? 0;
+    }
+    const currentPlayer = normalized.players.find((item) => item.id === normalized.currentPlayerId);
+    if (normalized.phase !== 'setup' && currentPlayer && currentPlayer.status !== 'available') {
+      return this.advanceAfterSettlement(normalized, currentPlayer.id);
     }
     return normalized;
   }

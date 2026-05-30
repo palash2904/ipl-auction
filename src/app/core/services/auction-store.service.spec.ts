@@ -53,6 +53,8 @@ describe('AuctionStore', () => {
     expect(soldPlayer?.soldTo).toBe(team.id);
     expect(updatedTeam?.playerIds).toContain(player?.id);
     expect(updatedTeam?.purseRemaining).toBeLessThan(120);
+    expect(store.currentPlayer()?.id).not.toBe(player?.id);
+    expect(store.currentPlayer()?.status).toBe('available');
   });
 
   it('initializes every eligible franchise as active for a new player', () => {
@@ -95,6 +97,8 @@ describe('AuctionStore', () => {
     const passedPlayer = store.state().players.find((item) => item.id === player?.id);
     expect(passedPlayer?.status).toBe('unsold');
     expect(store.state().currentPassTeamIds).toEqual([]);
+    expect(store.currentPlayer()?.id).not.toBe(player?.id);
+    expect(store.currentPlayer()?.status).toBe('available');
   });
 
   it('keeps a passed franchise out of the bidding until the next player starts', () => {
@@ -106,7 +110,7 @@ describe('AuctionStore', () => {
     expect(store.bid(otherTeam.id)).toBeNull();
 
     expect(store.state().players.find((item) => item.id === store.state().bidHistory[0].playerId)?.status).toBe('sold');
-    expect(store.state().activeBidderIds).toEqual([]);
+    expect(store.state().activeBidderIds).toEqual(store.state().franchises.map((item) => item.id));
   });
 
   it('uses the latest bid as source of truth when derived bidder state is stale', () => {
@@ -125,5 +129,24 @@ describe('AuctionStore', () => {
     expect(store.passErrorFor(dhoniSuperKings)).toBeNull();
     expect(store.bid(dhoniSuperKings.id)).toBeNull();
     expect(store.state().currentBid?.amount).toBe(3);
+  });
+
+  it('repairs saved state that still points at a settled player', () => {
+    const player = store.currentPlayer();
+    const corruptedState = {
+      ...store.state(),
+      players: store.state().players.map((item) =>
+        item.id === player?.id ? { ...item, status: 'sold' as const } : item,
+      ),
+      currentPlayerId: player?.id ?? null,
+      activeBidderIds: [],
+      passedBidderIds: [],
+    };
+
+    store.applyRemoteState(corruptedState);
+
+    expect(store.currentPlayer()?.id).not.toBe(player?.id);
+    expect(store.currentPlayer()?.status).toBe('available');
+    expect(store.state().activeBidderIds.length).toBeGreaterThan(0);
   });
 });
