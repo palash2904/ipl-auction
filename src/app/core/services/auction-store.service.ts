@@ -63,6 +63,7 @@ const initialState = (): AuctionState => ({
 export class AuctionStore {
   private readonly stateSignal = signal<AuctionState>(this.loadState());
   private lastBidSnapshot: AuctionState | null = null;
+  private autoSellTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly state = this.stateSignal.asReadonly();
   readonly currentPlayer = computed(() =>
@@ -301,6 +302,7 @@ export class AuctionStore {
   }
 
   undoLastBid(): void {
+    this.clearAutoSellTimer();
     if (!this.lastBidSnapshot) return;
     this.stateSignal.set({
       ...this.lastBidSnapshot,
@@ -321,11 +323,13 @@ export class AuctionStore {
   }
 
   resetAuction(): void {
+    this.clearAutoSellTimer();
     localStorage.removeItem(STORAGE_KEY);
     this.stateSignal.set(initialState());
   }
 
   applyRemoteState(state: AuctionState): void {
+    this.clearAutoSellTimer();
     this.stateSignal.set(this.normalizeState(state));
   }
 
@@ -410,6 +414,10 @@ export class AuctionStore {
     const state = this.state();
     if (!this.highestBidderFor(state) && state.activeBidderIds.length === 0) {
       this.markUnsold();
+      return;
+    }
+    if (this.canAutoSell(state)) {
+      this.scheduleAutoSell(state.currentPlayerId, this.highestBidderFor(state));
     }
   }
 
@@ -419,6 +427,27 @@ export class AuctionStore {
       state.activeBidderIds.length === 1 &&
       state.activeBidderIds[0] === this.highestBidderFor(state)
     );
+  }
+
+  private scheduleAutoSell(playerId: string | null, bidderId: string | null): void {
+    if (!playerId || !bidderId || this.autoSellTimer) return;
+    this.autoSellTimer = setTimeout(() => {
+      this.autoSellTimer = null;
+      const state = this.state();
+      if (
+        state.currentPlayerId === playerId &&
+        this.highestBidderFor(state) === bidderId &&
+        this.canAutoSell(state)
+      ) {
+        this.sellCurrentPlayer();
+      }
+    }, 1800);
+  }
+
+  private clearAutoSellTimer(): void {
+    if (!this.autoSellTimer) return;
+    clearTimeout(this.autoSellTimer);
+    this.autoSellTimer = null;
   }
 
   private highestBidderFor(state: AuctionState): string | null {

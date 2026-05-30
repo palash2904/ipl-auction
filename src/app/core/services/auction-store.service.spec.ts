@@ -54,7 +54,8 @@ describe('AuctionStore', () => {
     expect(store.nextBidAmount(16)).toBe(18);
   });
 
-  it('records a bid and sells the player to the winning franchise after confirmation', () => {
+  it('records a bid and auto-sells the player after only one bidder remains', () => {
+    jasmine.clock().install();
     const team = store.state().franchises[0];
     const otherTeam = store.state().franchises[1];
     const player = store.currentPlayer();
@@ -65,7 +66,7 @@ describe('AuctionStore', () => {
     expect(store.currentPlayer()?.id).toBe(player?.id);
     expect(store.canSellCurrentPlayer()).toBeTrue();
 
-    store.sellCurrentPlayer();
+    jasmine.clock().tick(1800);
 
     const soldPlayer = store.state().players.find((item) => item.id === player?.id);
     const updatedTeam = store.state().franchises.find((item) => item.id === team.id);
@@ -76,6 +77,7 @@ describe('AuctionStore', () => {
     expect(updatedTeam?.purseRemaining).toBeLessThan(120);
     expect(store.currentPlayer()?.id).not.toBe(player?.id);
     expect(store.currentPlayer()?.status).toBe('available');
+    jasmine.clock().uninstall();
   });
 
   it('initializes every eligible franchise as active for a new player', () => {
@@ -132,7 +134,8 @@ describe('AuctionStore', () => {
     expect(store.state().auctionLog[0].message).toBe('Auction ended by auction control');
   });
 
-  it('keeps a passed franchise out of the bidding until the player is sold', () => {
+  it('keeps a passed franchise visible before delayed auto-sell advances to the next player', () => {
+    jasmine.clock().install();
     const team = store.state().franchises[0];
     const otherTeam = store.state().franchises[1];
     const player = store.currentPlayer();
@@ -146,10 +149,11 @@ describe('AuctionStore', () => {
     expect(store.bidderStatusFor(team.id)).toContain('Passed');
     expect(store.canSellCurrentPlayer()).toBeTrue();
 
-    store.sellCurrentPlayer();
+    jasmine.clock().tick(1800);
 
     expect(store.state().players.find((item) => item.id === player?.id)?.status).toBe('sold');
     expect(store.state().activeBidderIds).toEqual(store.state().franchises.map((item) => item.id));
+    jasmine.clock().uninstall();
   });
 
   it('uses the latest bid as source of truth when derived bidder state is stale', () => {
