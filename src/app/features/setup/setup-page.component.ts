@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuctionStore } from '../../core/services/auction-store.service';
+import { MultiplayerSessionService } from '../../core/services/multiplayer-session.service';
 
 @Component({
   selector: 'app-setup-page',
@@ -14,6 +15,9 @@ export class SetupPageComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   protected readonly store = inject(AuctionStore);
+  protected readonly session = inject(MultiplayerSessionService);
+  protected resettingRoom = false;
+  protected resetError = '';
 
   protected readonly form = this.fb.group({
     teams: this.fb.array([
@@ -53,8 +57,17 @@ export class SetupPageComponent {
     if (this.store.loadSavedState()) this.router.navigateByUrl('/auction');
   }
 
-  reset(): void {
-    this.store.resetAuction();
+  async resetRoom(): Promise<void> {
+    this.resettingRoom = true;
+    this.resetError = '';
+    try {
+      this.store.resetAuction();
+      await this.session.clearConnectedMembers();
+    } catch (error) {
+      this.resetError = error instanceof Error ? error.message : 'Unable to reset room right now.';
+    } finally {
+      this.resettingRoom = false;
+    }
   }
 
   protected hasDuplicates(): boolean {

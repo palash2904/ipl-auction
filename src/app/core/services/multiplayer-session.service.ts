@@ -5,9 +5,11 @@ import {
   doc,
   Firestore,
   getFirestore,
+  getDocs,
   onSnapshot,
   setDoc,
   Unsubscribe,
+  writeBatch,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
 import { RoomMember } from '../../models/multiplayer.models';
@@ -66,6 +68,20 @@ export class MultiplayerSessionService {
     localStorage.removeItem(SESSION_KEY);
     this.currentMember.set(null);
     this.status.set('Choose your team');
+  }
+
+  async clearConnectedMembers(): Promise<void> {
+    localStorage.removeItem(SESSION_KEY);
+    this.currentMember.set(null);
+    this.members.set([]);
+    this.status.set('Room members cleared');
+
+    if (!this.db) return;
+    const membersRef = collection(this.db, 'auctionRooms', environment.firebase.roomId, 'members');
+    const snapshot = await getDocs(membersRef);
+    const batch = writeBatch(this.db);
+    snapshot.docs.forEach((member) => batch.delete(member.ref));
+    await batch.commit();
   }
 
   canBid(teamId: string): boolean {

@@ -45,7 +45,12 @@
   </form>
 
   <aside class="join-panel">
-    <h2>Connected Members</h2>
+    <div class="section-head">
+      <h2>Connected Members</h2>
+      <button class="btn danger compact" type="button" (click)="resetRoom()" [disabled]="resettingRoom">
+        {{ resettingRoom ? 'Resetting...' : 'Reset Room' }}
+      </button>
+    </div>
     @for (member of session.members(); track member.uid) {
       <div class="history-row">
         <span>{{ member.displayName }}</span>
@@ -53,6 +58,9 @@
       </div>
     } @empty {
       <p class="muted">Members appear here after they join.</p>
+    }
+    @if (resetError) {
+      <div class="alert">{{ resetError }}</div>
     }
   </aside>
 </section>

@@ -17,7 +17,9 @@ export class JoinRoomComponent {
   protected readonly store = inject(AuctionStore);
   protected readonly session = inject(MultiplayerSessionService);
   protected joining = false;
+  protected resettingRoom = false;
   protected joinError = '';
+  protected resetError = '';
 
   protected readonly form = this.fb.nonNullable.group({
     displayName: [''],
@@ -42,6 +44,21 @@ export class JoinRoomComponent {
       this.joinError = error instanceof Error ? error.message : 'Unable to join right now.';
     } finally {
       this.joining = false;
+    }
+  }
+
+  protected async resetRoom(): Promise<void> {
+    this.resettingRoom = true;
+    this.resetError = '';
+    try {
+      this.store.resetAuction();
+      await this.session.clearConnectedMembers();
+      this.form.reset({ displayName: '', teamId: '' });
+      this.router.navigateByUrl('/setup');
+    } catch (error) {
+      this.resetError = error instanceof Error ? error.message : 'Unable to reset room right now.';
+    } finally {
+      this.resettingRoom = false;
     }
   }
 }
