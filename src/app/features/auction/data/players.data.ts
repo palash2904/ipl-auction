@@ -69,6 +69,18 @@ const setDefinitions = [
   ['CAPPED SPINNERS B', ['Piyush Chawla', 'Wanindu Hasaranga', 'Rahul Chahar', 'Prabath Jayasuriya', 'Varun Chakravarthy', 'Noor Ahmed', 'Ravi Bishnoi']],
 ] as const;
 
+const roleOverrides = new Map<string, string>([
+  ['MS Dhoni', 'WK-Batter'],
+  ['AB de Villiers', 'WK-Batter'],
+  ['Lasith Malinga', 'Fast Bowler'],
+  ['Jasprit Bumrah', 'Fast Bowler'],
+  ['Rashid Khan', 'Spinner'],
+  ['Pat Cummins', 'Fast Bowler'],
+  ['Glenn Maxwell', 'All-rounder'],
+  ['Ben Stokes', 'All-rounder'],
+  ['Hardik Pandya', 'All-rounder'],
+]);
+
 const roleForSet = (setNumber: number): string => {
   if ([5, 6].includes(setNumber)) return 'All-rounder';
   if (setNumber === 7) return 'WK-Batter';
@@ -90,7 +102,7 @@ export const AUCTION_SETS: AuctionSet[] = setDefinitions.map(([title, names], se
     title: `SET ${setNumber} - ${title}`,
     players: names.map((name, playerIndex) => {
       const overseas = !indianNames.has(name);
-      const role = roleForSet(setNumber);
+      const role = roleOverrides.get(name) ?? roleForSet(setNumber);
       const player: Player = {
         id: `set-${setNumber}-${playerIndex + 1}`,
         name,
