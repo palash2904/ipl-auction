@@ -173,6 +173,23 @@ describe('AuctionStore', () => {
     jasmine.clock().uninstall();
   });
 
+  it('reschedules auto-sell after applying synced remote state', () => {
+    jasmine.clock().install();
+    const highestBidder = store.state().franchises[0];
+    const otherTeam = store.state().franchises[1];
+    const player = store.currentPlayer();
+
+    expect(store.bid(highestBidder.id)).toBeNull();
+    expect(store.pass(otherTeam.id)).toBeNull();
+    store.applyRemoteState(structuredClone(store.state()));
+    jasmine.clock().tick(1800);
+
+    const soldPlayer = store.state().players.find((item) => item.id === player?.id);
+    expect(soldPlayer?.status).toBe('sold');
+    expect(soldPlayer?.soldTo).toBe(highestBidder.id);
+    jasmine.clock().uninstall();
+  });
+
   it('uses the latest bid as source of truth when derived bidder state is stale', () => {
     const dhoniSuperKings = store.state().franchises[0];
     const mumbaiLegends = store.state().franchises[1];

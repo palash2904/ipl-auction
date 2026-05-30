@@ -330,6 +330,7 @@ export class AuctionStore {
   applyRemoteState(state: AuctionState): void {
     this.clearAutoSellTimer();
     this.stateSignal.set(this.normalizeState(state));
+    this.resolveCurrentPlayer();
   }
 
   exportSquads(): void {
