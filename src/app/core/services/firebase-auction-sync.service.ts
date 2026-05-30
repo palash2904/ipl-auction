@@ -129,6 +129,10 @@ export class FirebaseAuctionSyncService {
   private normalizeState(state: AuctionState): AuctionState {
     return {
       ...state,
+      activeBidderIds: state.activeBidderIds ?? [],
+      passedBidderIds: state.passedBidderIds ?? state.currentPassTeamIds ?? [],
+      highestBidderId: state.currentBid?.teamId ?? state.highestBidderId ?? null,
+      currentBidAmount: state.currentBid?.amount ?? state.currentBidAmount ?? 0,
       currentPassTeamIds: state.currentPassTeamIds ?? [],
     };
   }

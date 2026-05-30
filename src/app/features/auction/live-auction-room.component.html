@@ -18,7 +18,7 @@
           <h2>{{ player.name }}</h2>
           <div class="price-strip">
             <span>Base {{ player.basePrice | crore }}</span>
-            <strong>{{ store.state().currentBid?.amount ?? player.basePrice | crore }}</strong>
+            <strong>{{ store.displayBidAmount() | crore }}</strong>
           </div>
           <div class="stats-row">
             <span>{{ player.stats?.matches || 0 }} matches</span>
@@ -39,8 +39,6 @@
       </article>
 
       <div class="control-rack">
-        <button class="btn primary" type="button" (click)="sell()" [disabled]="!store.state().currentBid || !session.canControlAuction()">Sold</button>
-        <button class="btn danger" type="button" (click)="unsold()" [disabled]="!session.canControlAuction()">Unsold</button>
         <button class="btn ghost" type="button" (click)="store.undoLastBid()" [disabled]="!session.canControlAuction()">Undo Bid</button>
         <button class="btn ghost" type="button" (click)="store.toggleAccelerated()" [disabled]="!session.canControlAuction()">
           {{ store.state().accelerated ? 'Standard' : 'Accelerated' }}
@@ -72,15 +70,13 @@
       @for (team of store.state().franchises; track team.id) {
         <div
           class="purse-row"
-          [class.leading]="store.state().currentBid?.teamId === team.id"
+          [class.leading]="store.isHighestBidder(team.id)"
         >
           <span class="team-avatar">{{ team.logoEmoji }}</span>
           <span class="team-summary">
             <strong>{{ team.franchiseName }}</strong>
             <small>{{ team.purseRemaining | crore }} · {{ team.playerIds.length }}/25 squad · {{ store.overseasUsed(team.id) }}/8 overseas</small>
-            @if (store.hasPassed(team.id)) {
-              <small class="pass-status">Passed this player</small>
-            }
+            <small class="pass-status">{{ store.bidderStatusFor(team.id) }}</small>
           </span>
           <span class="paddle-actions">
             <button

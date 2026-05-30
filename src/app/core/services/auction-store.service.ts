@@ -17,6 +17,10 @@ const initialState = (): AuctionState => ({
   players: structuredClone(AUCTION_PLAYERS),
   currentPlayerId: null,
   currentBid: null,
+  activeBidderIds: [],
+  passedBidderIds: [],
+  highestBidderId: null,
+  currentBidAmount: 0,
   currentPassTeamIds: [],
   bidHistory: [],
   auctionLog: [],
@@ -53,7 +57,7 @@ export class AuctionStore {
   }
 
   setupAuction(teams: TeamFormValue[]): void {
-    const franchises = teams.map((team, index): Franchise => ({
+    const franchises = teams.map((team): Franchise => ({
       id: crypto.randomUUID(),
       ownerName: team.ownerName.trim(),
       franchiseName: team.franchiseName.trim(),
@@ -66,14 +70,19 @@ export class AuctionStore {
     }));
     const players = structuredClone(AUCTION_PLAYERS);
     const currentPlayerId = players[0]?.id ?? null;
-    this.stateSignal.set({
-      ...initialState(),
-      franchises,
-      players,
-      currentPlayerId,
-      phase: 'live',
-      auctionLog: [this.log(`Auction started with ${franchises.length} franchises`)],
-    });
+    this.stateSignal.set(
+      this.preparePlayerAuction(
+        {
+          ...initialState(),
+          franchises,
+          players,
+          currentPlayerId,
+          phase: 'live',
+          auctionLog: [this.log(`Auction started with ${franchises.length} franchises`)],
+        },
+        currentPlayerId,
+      ),
+    );
   }
 
   bid(teamId: string): string | null {
@@ -83,7 +92,10 @@ export class AuctionStore {
     if (!player || !team) return 'No active player selected.';
     const error = this.validateBid(team, player);
     if (error) return error;
-    const amount = this.nextBidAmount(state.currentBid?.amount ?? player.basePrice - this.incrementFor(player.basePrice));
+    const currentAmount = this.currentAmountFor(state, player);
+    const amount = this.highestBidderFor(state)
+      ? this.nextBidAmount(currentAmount)
+      : currentAmount;
     if (team.purseRemaining < amount) return `${team.franchiseName} needs ${this.money(amount)} available.`;
 
     this.lastBidSnapshot = structuredClone(state);
@@ -98,10 +110,13 @@ export class AuctionStore {
     this.stateSignal.update((current) => ({
       ...current,
       currentBid: bid,
+      highestBidderId: team.id,
+      currentBidAmount: amount,
       bidHistory: [bid, ...current.bidHistory],
       goingStage: 0,
       auctionLog: [this.log(`${team.franchiseName} bids ${this.money(amount)} for ${player.name}`), ...current.auctionLog],
     }));
+    this.resolveCurrentPlayer();
     this.playTone(720, 0.08);
     return null;
   }
@@ -112,19 +127,18 @@ export class AuctionStore {
     const team = state.franchises.find((item) => item.id === teamId);
     if (!player || !team) return 'No active player selected.';
     if (player.status !== 'available') return 'Player is no longer available.';
-    if (state.currentBid?.teamId === team.id) return 'Leading team cannot pass after bidding.';
-    if (state.currentPassTeamIds.includes(team.id)) return `${team.franchiseName} already passed.`;
+    if (this.highestBidderFor(state) === team.id) return 'Highest bidder cannot pass after bidding.';
+    if (!state.activeBidderIds.includes(team.id)) return `${team.franchiseName} is not active for this player.`;
+    if (state.passedBidderIds.includes(team.id)) return `${team.franchiseName} already passed.`;
 
-    const passTeamIds = [...state.currentPassTeamIds, team.id];
     this.stateSignal.update((current) => ({
       ...current,
-      currentPassTeamIds: passTeamIds,
+      activeBidderIds: current.activeBidderIds.filter((id) => id !== team.id),
+      passedBidderIds: [...current.passedBidderIds, team.id],
+      currentPassTeamIds: [...current.passedBidderIds, team.id],
       auctionLog: [this.log(`${team.franchiseName} passes on ${player.name}`), ...current.auctionLog],
     }));
-
-    if (!state.currentBid && passTeamIds.length === state.franchises.length) {
-      this.markUnsold();
-    }
+    this.resolveCurrentPlayer();
 
     return null;
   }
@@ -138,6 +152,10 @@ export class AuctionStore {
         item.id === player.id ? { ...item, status: 'unsold', soldTo: null, soldPrice: 0 } : item,
       ),
       currentBid: null,
+      activeBidderIds: [],
+      passedBidderIds: [],
+      highestBidderId: null,
+      currentBidAmount: 0,
       currentPassTeamIds: [],
       goingStage: 0,
       auctionLog: [this.log(`${player.name} goes unsold`), ...state.auctionLog],
@@ -149,7 +167,7 @@ export class AuctionStore {
     const state = this.state();
     const player = this.currentPlayer();
     const bid = state.currentBid;
-    if (!player || !bid || player.status !== 'available') return;
+    if (!player || !bid || player.status !== 'available' || !this.canAutoSell(state)) return;
 
     this.stateSignal.update((current) => ({
       ...current,
@@ -168,6 +186,10 @@ export class AuctionStore {
           : team,
       ),
       currentBid: null,
+      activeBidderIds: [],
+      passedBidderIds: [],
+      highestBidderId: null,
+      currentBidAmount: 0,
       currentPassTeamIds: [],
       goingStage: 0,
       auctionLog: [this.log(`SOLD: ${player.name} to ${bid.teamName} for ${this.money(bid.amount)}`), ...current.auctionLog],
@@ -179,42 +201,48 @@ export class AuctionStore {
   nextPlayer(): void {
     this.stateSignal.update((state) => {
       const next = state.players.find((player) => player.status === 'available' && player.id !== state.currentPlayerId);
-      return {
-        ...state,
-        currentPlayerId: next?.id ?? null,
-        phase: next ? state.phase : 'complete',
-        currentBid: null,
-        currentPassTeamIds: [],
-        goingStage: 0,
-      };
+      return this.preparePlayerAuction(
+        {
+          ...state,
+          currentPlayerId: next?.id ?? null,
+          phase: next ? state.phase : 'complete',
+        },
+        next?.id ?? null,
+      );
     });
   }
 
   selectPlayer(playerId: string): void {
     const player = this.state().players.find((item) => item.id === playerId && item.status === 'available');
     if (!player) return;
-    this.stateSignal.update((state) => ({
-      ...state,
-      currentPlayerId: player.id,
-      currentBid: null,
-      currentPassTeamIds: [],
-      goingStage: 0,
-    }));
+    this.stateSignal.update((state) =>
+      this.preparePlayerAuction(
+        {
+          ...state,
+          currentPlayerId: player.id,
+        },
+        player.id,
+      ),
+    );
   }
 
   startReauction(): void {
     const unsoldIds = new Set(this.unsoldPlayers().map((player) => player.id));
-    this.stateSignal.update((state) => ({
-      ...state,
-      phase: 'reauction',
-      players: state.players.map((player) =>
-        unsoldIds.has(player.id) ? { ...player, status: 'available' } : player,
-      ),
-      currentPlayerId: [...unsoldIds][0] ?? state.currentPlayerId,
-      currentBid: null,
-      currentPassTeamIds: [],
-      auctionLog: [this.log('Re-auction phase opened for unsold players'), ...state.auctionLog],
-    }));
+    this.stateSignal.update((state) => {
+      const currentPlayerId = [...unsoldIds][0] ?? state.currentPlayerId;
+      return this.preparePlayerAuction(
+        {
+          ...state,
+          phase: 'reauction',
+          players: state.players.map((player) =>
+            unsoldIds.has(player.id) ? { ...player, status: 'available' } : player,
+          ),
+          currentPlayerId,
+          auctionLog: [this.log('Re-auction phase opened for unsold players'), ...state.auctionLog],
+        },
+        currentPlayerId,
+      );
+    });
   }
 
   toggleAccelerated(): void {
@@ -295,13 +323,31 @@ export class AuctionStore {
     const state = this.state();
     if (!player) return 'Auction complete.';
     if (player.status !== 'available') return 'Player is no longer available.';
-    if (state.currentBid?.teamId === team.id) return 'Leading team cannot pass after bidding.';
-    if (state.currentPassTeamIds.includes(team.id)) return 'Team already passed.';
+    if (this.highestBidderFor(state) === team.id) return 'Highest bidder cannot pass after bidding.';
+    if (state.passedBidderIds.includes(team.id)) return 'Team already passed.';
+    if (!state.activeBidderIds.includes(team.id)) return 'Team is not active for this player.';
     return null;
   }
 
   hasPassed(teamId: string): boolean {
-    return this.state().currentPassTeamIds.includes(teamId);
+    return this.state().passedBidderIds.includes(teamId);
+  }
+
+  bidderStatusFor(teamId: string): string {
+    const state = this.state();
+    if (this.highestBidderFor(state) === teamId) return '🔨 Highest Bidder';
+    if (state.passedBidderIds.includes(teamId)) return '⏭ Passed';
+    if (state.activeBidderIds.includes(teamId)) return '🟢 Active';
+    return 'Not eligible';
+  }
+
+  isHighestBidder(teamId: string): boolean {
+    return this.highestBidderFor(this.state()) === teamId;
+  }
+
+  displayBidAmount(): number {
+    const player = this.currentPlayer();
+    return player ? this.currentAmountFor(this.state(), player) : 0;
   }
 
   nextBidAmount(current: number): number {
@@ -310,12 +356,80 @@ export class AuctionStore {
 
   private validateBid(team: Franchise, player: Player): string | null {
     if (player.status !== 'available') return 'Player is no longer available.';
-    if (this.state().currentPassTeamIds.includes(team.id)) return 'Team already passed on this player.';
+    const state = this.state();
+    if (state.passedBidderIds.includes(team.id)) return 'Team already passed on this player.';
+    if (!state.activeBidderIds.includes(team.id)) return 'Team is not active for this player.';
     if (team.playerIds.length >= team.maxSquadSize) return 'Squad already has 25 players.';
     if (player.overseas && this.overseasUsed(team.id) >= team.overseasSlotsMax) return 'Overseas slots are full.';
-    const next = this.nextBidAmount(this.state().currentBid?.amount ?? player.basePrice - this.incrementFor(player.basePrice));
+    const currentAmount = this.currentAmountFor(state, player);
+    const next = this.highestBidderFor(state) ? this.nextBidAmount(currentAmount) : currentAmount;
     if (team.purseRemaining < next) return 'Purse insufficient for next bid.';
     return null;
+  }
+
+  private resolveCurrentPlayer(): void {
+    const state = this.state();
+    if (!this.highestBidderFor(state) && state.activeBidderIds.length === 0) {
+      this.markUnsold();
+      return;
+    }
+    if (this.canAutoSell(state)) this.sellCurrentPlayer();
+  }
+
+  private canAutoSell(state: AuctionState): boolean {
+    return (
+      this.highestBidderFor(state) !== null &&
+      state.activeBidderIds.length === 1 &&
+      state.activeBidderIds[0] === this.highestBidderFor(state)
+    );
+  }
+
+  private highestBidderFor(state: AuctionState): string | null {
+    return state.currentBid?.teamId ?? state.highestBidderId;
+  }
+
+  private currentAmountFor(state: AuctionState, player: Player): number {
+    return (state.currentBid?.amount ?? state.currentBidAmount) || player.basePrice;
+  }
+
+  private preparePlayerAuction(state: AuctionState, playerId: string | null): AuctionState {
+    const player = state.players.find((item) => item.id === playerId && item.status === 'available') ?? null;
+    if (!player) {
+      return {
+        ...state,
+        currentBid: null,
+        activeBidderIds: [],
+        passedBidderIds: [],
+        highestBidderId: null,
+        currentBidAmount: 0,
+        currentPassTeamIds: [],
+        goingStage: 0,
+      };
+    }
+
+    const activeBidderIds = state.franchises
+      .filter((team) => this.isEligibleForPlayer(team, player, state.players))
+      .map((team) => team.id);
+
+    return {
+      ...state,
+      currentBid: null,
+      activeBidderIds,
+      passedBidderIds: [],
+      highestBidderId: null,
+      currentBidAmount: player.basePrice,
+      currentPassTeamIds: [],
+      goingStage: 0,
+    };
+  }
+
+  private isEligibleForPlayer(team: Franchise, player: Player, players: Player[]): boolean {
+    if (team.playerIds.length >= team.maxSquadSize) return false;
+    if (team.purseRemaining < player.basePrice) return false;
+    if (!player.overseas) return true;
+    const ids = new Set(team.playerIds);
+    const overseasUsed = players.filter((item) => ids.has(item.id) && item.overseas).length;
+    return overseasUsed < team.overseasSlotsMax;
   }
 
   private incrementFor(amount: number): number {
@@ -337,7 +451,20 @@ export class AuctionStore {
   }
 
   private normalizeState(state: Partial<AuctionState>): AuctionState {
-    return { ...initialState(), ...state, currentPassTeamIds: state.currentPassTeamIds ?? [] };
+    const normalized = {
+      ...initialState(),
+      ...state,
+      activeBidderIds: state.activeBidderIds ?? [],
+      passedBidderIds: state.passedBidderIds ?? state.currentPassTeamIds ?? [],
+      highestBidderId: state.currentBid?.teamId ?? state.highestBidderId ?? null,
+      currentBidAmount: state.currentBid?.amount ?? state.currentBidAmount ?? 0,
+      currentPassTeamIds: state.currentPassTeamIds ?? state.passedBidderIds ?? [],
+    };
+    if (normalized.currentPlayerId && normalized.currentBidAmount === 0) {
+      const player = normalized.players.find((item) => item.id === normalized.currentPlayerId);
+      normalized.currentBidAmount = player?.basePrice ?? 0;
+    }
+    return normalized;
   }
 
   private log(message: string): AuctionLogEntry {
