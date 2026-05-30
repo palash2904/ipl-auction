@@ -12,6 +12,19 @@ import {
 const STARTING_PURSE = 120;
 const STORAGE_KEY = 'ipl-legends-auction-state';
 
+const shuffleSetWisePlayers = (players: Player[]): Player[] => {
+  const setNumbers = [...new Set(players.map((player) => player.setNumber))].sort((a, b) => a - b);
+
+  return setNumbers.flatMap((setNumber) => {
+    const setPlayers = players.filter((player) => player.setNumber === setNumber);
+    for (let index = setPlayers.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [setPlayers[index], setPlayers[randomIndex]] = [setPlayers[randomIndex], setPlayers[index]];
+    }
+    return setPlayers;
+  });
+};
+
 const initialState = (): AuctionState => ({
   franchises: [],
   players: structuredClone(AUCTION_PLAYERS),
@@ -68,7 +81,7 @@ export class AuctionStore {
       maxSquadSize: 25,
       playerIds: [],
     }));
-    const players = structuredClone(AUCTION_PLAYERS);
+    const players = shuffleSetWisePlayers(structuredClone(AUCTION_PLAYERS));
     const currentPlayerId = players[0]?.id ?? null;
     this.stateSignal.set(
       this.preparePlayerAuction(

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { AUCTION_PLAYERS } from '../../features/auction/data/players.data';
 import { AuctionStore } from './auction-store.service';
 
 const teams = [
@@ -28,6 +29,22 @@ describe('AuctionStore', () => {
     expect(franchise.startingPurse).toBe(120);
     expect(franchise.overseasSlotsMax).toBe(8);
     expect(franchise.maxSquadSize).toBe(25);
+  });
+
+  it('shuffles players inside each set when starting an auction', () => {
+    const originalSetOneIds = AUCTION_PLAYERS.filter((player) => player.setNumber === 1).map((player) => player.id);
+
+    spyOn(Math, 'random').and.returnValue(0);
+    store.setupAuction(teams);
+
+    const setOneIds = store.state().players.filter((player) => player.setNumber === 1).map((player) => player.id);
+    const firstSetTwoIndex = store.state().players.findIndex((player) => player.setNumber === 2);
+    const lastSetOneIndex = store.state().players.map((player) => player.setNumber).lastIndexOf(1);
+
+    expect(setOneIds).not.toEqual(originalSetOneIds);
+    expect([...setOneIds].sort()).toEqual([...originalSetOneIds].sort());
+    expect(lastSetOneIndex).toBeLessThan(firstSetTwoIndex);
+    expect(store.currentPlayer()?.setNumber).toBe(1);
   });
 
   it('calculates bid increments by current price band', () => {
