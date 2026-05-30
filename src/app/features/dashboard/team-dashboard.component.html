@@ -7,6 +7,135 @@
     <button class="btn primary" type="button" (click)="store.exportSquads()">Export PDF</button>
   </div>
 
+  @if (bestSquad(); as winner) {
+    <section class="squad-analysis">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Post-auction review</p>
+          <h2>Squad Analysis</h2>
+        </div>
+        <div class="winner-badge">
+          <span>Best Squad</span>
+          <strong>{{ winner.franchise.logoEmoji }} {{ winner.franchise.franchiseName }}</strong>
+        </div>
+      </div>
+
+      <div class="ranking-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Franchise</th>
+              <th>Overall</th>
+              <th>Batting</th>
+              <th>Bowling</th>
+              <th>AR</th>
+              <th>WK</th>
+              <th>Depth</th>
+              <th>Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (analysis of squadAnalysis(); track analysis.franchise.id) {
+              <tr>
+                <td>#{{ analysis.rank }}</td>
+                <td>{{ analysis.franchise.logoEmoji }} {{ analysis.franchise.franchiseName }}</td>
+                <td><strong>{{ analysis.overallRating }}</strong></td>
+                <td>{{ analysis.battingRating }}</td>
+                <td>{{ analysis.bowlingRating }}</td>
+                <td>{{ analysis.allRounderRating }}</td>
+                <td>{{ analysis.wicketkeeperRating }}</td>
+                <td>{{ analysis.depthRating }}</td>
+                <td>{{ analysis.balanceRating }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="analysis-grid">
+        @for (analysis of squadAnalysis(); track analysis.franchise.id) {
+          <article class="analysis-card">
+            <div class="team-card-head">
+              <span class="team-logo">{{ analysis.franchise.logoEmoji }}</span>
+              <div>
+                <p class="eyebrow">Rank #{{ analysis.rank }}</p>
+                <h3>{{ analysis.franchise.franchiseName }}</h3>
+                <p>{{ analysis.combination }}</p>
+              </div>
+              <strong class="rating-pill">{{ analysis.overallRating }}</strong>
+            </div>
+
+            <div class="analysis-metrics">
+              <div><span>Batting</span><strong>{{ analysis.battingRating }}</strong></div>
+              <div><span>Bowling</span><strong>{{ analysis.bowlingRating }}</strong></div>
+              <div><span>All-round</span><strong>{{ analysis.allRounderRating }}</strong></div>
+              <div><span>Balance</span><strong>{{ analysis.balanceRating }}</strong></div>
+            </div>
+
+            <div class="analysis-columns">
+              <div>
+                <h4>Strengths</h4>
+                @for (item of analysis.strengths; track item) {
+                  <p>{{ item }}</p>
+                } @empty {
+                  <p>Still developing clear standout areas</p>
+                }
+              </div>
+              <div>
+                <h4>Weaknesses</h4>
+                @for (item of analysis.weaknesses; track item) {
+                  <p>{{ item }}</p>
+                }
+              </div>
+            </div>
+
+            <div class="xi-panel">
+              <h4>Best Playing XI</h4>
+              <ol>
+                @for (player of analysis.battingOrder; track player.id) {
+                  <li>
+                    <span>{{ player.name }}</span>
+                    <small>{{ player.role }}{{ player.id === analysis.captain?.id ? ' · C' : '' }}{{ player.id === analysis.viceCaptain?.id ? ' · VC' : '' }}</small>
+                  </li>
+                } @empty {
+                  <li><span>No sold players yet</span><small>Complete bidding to build XI</small></li>
+                }
+              </ol>
+            </div>
+
+            <div class="analysis-columns">
+              <div>
+                <h4>Bowling Options</h4>
+                @for (player of analysis.bowlingOptions; track player.id) {
+                  <p>{{ player.name }} · {{ player.role }}</p>
+                } @empty {
+                  <p>No bowling options selected</p>
+                }
+              </div>
+              <div>
+                <h4>Death Overs</h4>
+                @for (player of analysis.deathSpecialists; track player.id) {
+                  <p>{{ player.name }}</p>
+                } @empty {
+                  <p>No specialist identified</p>
+                }
+              </div>
+            </div>
+
+            <div class="chip-row">
+              @for (player of analysis.impactPlayers; track player.id) {
+                <span>{{ player.name }}</span>
+              } @empty {
+                <span>No impact players yet</span>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
   <div class="dashboard-grid">
     @for (team of store.state().franchises; track team.id) {
       <article class="team-card">
