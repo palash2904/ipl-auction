@@ -19,6 +19,7 @@ export class FirebaseAuctionSyncService {
   private writeInFlightSignature = '';
   private writeInFlight = false;
   private writeTimer?: ReturnType<typeof setTimeout>;
+  private hydratedFromRemote = false;
 
   readonly enabled = this.firebase.enabled;
   readonly connected = signal(false);
@@ -34,7 +35,11 @@ export class FirebaseAuctionSyncService {
         this.connected.set(true);
         this.status.set('Firebase realtime sync active');
         const remoteState = snapshot.data()?.['state'] as AuctionState | undefined;
-        if (!remoteState) return;
+        if (!remoteState) {
+          this.hydratedFromRemote = true;
+          this.lastSyncedSignature = this.signature(this.store.state());
+          return;
+        }
         const normalizedRemoteState = this.normalizeState(remoteState);
         const remoteSignature = this.signature(normalizedRemoteState);
         if (remoteSignature === this.lastSyncedSignature) return;
@@ -47,6 +52,7 @@ export class FirebaseAuctionSyncService {
         this.applyingRemote = true;
         this.store.applyRemoteState(normalizedRemoteState);
         this.lastSyncedSignature = remoteSignature;
+        this.hydratedFromRemote = true;
         queueMicrotask(() => (this.applyingRemote = false));
       },
       (error) => {
@@ -58,7 +64,7 @@ export class FirebaseAuctionSyncService {
 
     effect(() => {
       const state = this.store.state();
-      if (this.applyingRemote || !this.roomRef) return;
+      if (this.applyingRemote || !this.roomRef || !this.hydratedFromRemote) return;
       const signature = this.signature(state);
       if (signature === this.lastSyncedSignature) return;
       this.scheduleWrite(state, signature);
