@@ -610,6 +610,76 @@ dd {
   margin-bottom: 1rem;
 }
 
+.guide-page .section-head {
+  align-items: end;
+}
+
+.guide-page h1 {
+  max-width: none;
+}
+
+.guide-page .section-head .muted {
+  max-width: 48rem;
+}
+
+.guide-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.guide-card,
+.guide-rules {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.82);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+}
+
+.guide-card {
+  padding: 1rem;
+}
+
+.guide-step {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 1rem;
+  place-items: center;
+  border: 1px solid rgba(248, 201, 74, 0.45);
+  border-radius: 8px;
+  background: #0b1220;
+  color: var(--gold);
+  font-weight: 950;
+}
+
+.guide-card p {
+  color: var(--muted);
+}
+
+.guide-rules {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(18rem, 1.1fr);
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.guide-rule-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.guide-rule-list span {
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0b1220;
+  color: var(--text);
+  font-weight: 800;
+}
+
 .chip-row span {
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--line);
@@ -671,7 +741,9 @@ dd {
   .price-strip,
   .stats-row,
   .metric-grid,
-  .summary-metrics {
+  .summary-metrics,
+  .guide-rules,
+  .guide-rule-list {
     grid-template-columns: 1fr;
     display: grid;
   }
