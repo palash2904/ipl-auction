@@ -512,8 +512,6 @@ dd {
   flex: 1;
 }
 
-.team-summary strong,
-.team-summary small,
 .history-row span,
 .chip-row span,
 td {
@@ -523,6 +521,8 @@ td {
 .team-summary strong,
 .team-summary small {
   display: block;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .pass-status {
@@ -532,6 +532,7 @@ td {
 }
 
 .paddle-actions {
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
@@ -907,16 +908,21 @@ td {
   }
 
   .purse-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: start;
+    gap: 0.75rem;
   }
 
   .paddle-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
-    justify-content: stretch;
   }
 
   .paddle-actions .btn {
-    flex: 1;
+    width: 100%;
   }
 
   th,
