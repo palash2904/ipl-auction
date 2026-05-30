@@ -47,6 +47,7 @@
           {{ aiLoading ? 'Thinking...' : 'AI Commentary' }}
         </button>
         <button class="btn ghost" type="button" (click)="store.saveState()">Save</button>
+        <button class="btn danger" type="button" (click)="endAuction()" [disabled]="!session.canControlAuction()">End Auction</button>
       </div>
       @if (bidError) {
         <div class="alert">{{ bidError }}</div>

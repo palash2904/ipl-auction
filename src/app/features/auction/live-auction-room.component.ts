@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuctionStore } from '../../core/services/auction-store.service';
 import { AiCommentaryService } from '../../core/services/ai-commentary.service';
 import { MultiplayerSessionService } from '../../core/services/multiplayer-session.service';
@@ -15,10 +16,19 @@ export class LiveAuctionRoomComponent {
   protected readonly store = inject(AuctionStore);
   protected readonly ai = inject(AiCommentaryService);
   protected readonly session = inject(MultiplayerSessionService);
+  private readonly router = inject(Router);
   protected bidError = '';
   protected soldFlash = false;
   protected aiLine = '';
   protected aiLoading = false;
+
+  constructor() {
+    effect(() => {
+      if (this.store.state().phase === 'complete') {
+        this.router.navigateByUrl('/dashboard');
+      }
+    });
+  }
 
   bid(teamId: string): void {
     if (!this.session.canBid(teamId)) {
@@ -48,6 +58,13 @@ export class LiveAuctionRoomComponent {
   unsold(): void {
     if (!this.session.canControlAuction()) return;
     this.store.markUnsold();
+  }
+
+  endAuction(): void {
+    if (!this.session.canControlAuction()) return;
+    if (!confirm('Are you sure you want to end the auction?')) return;
+    this.store.endAuction();
+    this.router.navigateByUrl('/dashboard');
   }
 
   async generateCommentary(): Promise<void> {

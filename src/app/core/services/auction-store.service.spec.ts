@@ -118,6 +118,16 @@ describe('AuctionStore', () => {
     expect(store.currentPlayer()?.status).toBe('available');
   });
 
+  it('ends the auction and clears active bidding state', () => {
+    store.endAuction();
+
+    expect(store.state().phase).toBe('complete');
+    expect(store.state().currentPlayerId).toBeNull();
+    expect(store.state().currentBid).toBeNull();
+    expect(store.state().activeBidderIds).toEqual([]);
+    expect(store.state().auctionLog[0].message).toBe('Auction ended by auction control');
+  });
+
   it('keeps a passed franchise out of the bidding until the next player starts', () => {
     const team = store.state().franchises[0];
     const otherTeam = store.state().franchises[1];

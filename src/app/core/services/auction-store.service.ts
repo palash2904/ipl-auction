@@ -249,6 +249,22 @@ export class AuctionStore {
     });
   }
 
+  endAuction(): void {
+    this.stateSignal.update((state) => ({
+      ...state,
+      phase: 'complete',
+      currentPlayerId: null,
+      currentBid: null,
+      activeBidderIds: [],
+      passedBidderIds: [],
+      highestBidderId: null,
+      currentBidAmount: 0,
+      currentPassTeamIds: [],
+      goingStage: 0,
+      auctionLog: [this.log('Auction ended by auction control'), ...state.auctionLog],
+    }));
+  }
+
   toggleAccelerated(): void {
     this.stateSignal.update((state) => ({
       ...state,
