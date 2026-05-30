@@ -20,6 +20,7 @@ export class FirebaseAuctionSyncService {
   private writeInFlight = false;
   private writeTimer?: ReturnType<typeof setTimeout>;
   private hydratedFromRemote = false;
+  private protectLocalUntil = 0;
 
   readonly enabled = this.firebase.enabled;
   readonly connected = signal(false);
@@ -43,12 +44,13 @@ export class FirebaseAuctionSyncService {
         const normalizedRemoteState = this.normalizeState(remoteState);
         const remoteSignature = this.signature(normalizedRemoteState);
         if (remoteSignature === this.lastSyncedSignature) return;
-        if (this.hasLocalWritePending()) {
+        if (this.hasLocalWritePending() || Date.now() < this.protectLocalUntil) {
           if (remoteSignature === this.pendingWriteSignature || remoteSignature === this.writeInFlightSignature) {
             this.lastSyncedSignature = remoteSignature;
           }
           return;
         }
+        if (this.isOlderThanLocal(normalizedRemoteState, this.store.state())) return;
         this.applyingRemote = true;
         this.store.applyRemoteState(normalizedRemoteState);
         this.lastSyncedSignature = remoteSignature;
@@ -79,6 +81,7 @@ export class FirebaseAuctionSyncService {
   private scheduleWrite(state: AuctionState, signature: string): void {
     this.pendingWrite = this.toFirestoreState(state);
     this.pendingWriteSignature = signature;
+    this.protectLocalUntil = Date.now() + 3000;
     if (this.writeTimer) clearTimeout(this.writeTimer);
     this.writeTimer = setTimeout(() => {
       this.writeTimer = undefined;
@@ -107,6 +110,7 @@ export class FirebaseAuctionSyncService {
       );
       this.lastSyncedSignature = signature;
       this.writeInFlightSignature = '';
+      this.protectLocalUntil = Date.now() + 500;
       this.lastError.set('');
       this.status.set('Firebase realtime sync active');
     } catch (error) {
@@ -140,6 +144,16 @@ export class FirebaseAuctionSyncService {
 
   private hasLocalWritePending(): boolean {
     return !!this.pendingWriteSignature || !!this.writeInFlightSignature || this.writeInFlight;
+  }
+
+  private isOlderThanLocal(remote: AuctionState, local: AuctionState): boolean {
+    if (remote.currentPlayerId !== local.currentPlayerId) return false;
+    if (remote.players.filter((player) => player.status !== 'available').length < local.players.filter((player) => player.status !== 'available').length) {
+      return true;
+    }
+    if (remote.bidHistory.length < local.bidHistory.length) return true;
+    if (remote.auctionLog.length < local.auctionLog.length) return true;
+    return false;
   }
 
   private toFirestoreState(state: AuctionState): AuctionState {
