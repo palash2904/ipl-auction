@@ -364,6 +364,10 @@ export class AuctionStore {
     return null;
   }
 
+  canSellCurrentPlayer(): boolean {
+    return this.canAutoSell(this.state());
+  }
+
   hasPassed(teamId: string): boolean {
     return this.state().passedBidderIds.includes(teamId);
   }
@@ -406,9 +410,7 @@ export class AuctionStore {
     const state = this.state();
     if (!this.highestBidderFor(state) && state.activeBidderIds.length === 0) {
       this.markUnsold();
-      return;
     }
-    if (this.canAutoSell(state)) this.sellCurrentPlayer();
   }
 
   private canAutoSell(state: AuctionState): boolean {

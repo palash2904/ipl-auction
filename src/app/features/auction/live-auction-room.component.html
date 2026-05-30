@@ -39,6 +39,8 @@
       </article>
 
       <div class="control-rack">
+        <button class="btn primary" type="button" (click)="sell()" [disabled]="!session.canControlAuction() || !store.canSellCurrentPlayer()">Sell</button>
+        <button class="btn ghost" type="button" (click)="unsold()" [disabled]="!session.canControlAuction() || !!store.state().currentBid">Unsold</button>
         <button class="btn ghost" type="button" (click)="store.undoLastBid()" [disabled]="!session.canControlAuction()">Undo Bid</button>
         <button class="btn ghost" type="button" (click)="store.toggleAccelerated()" [disabled]="!session.canControlAuction()">
           {{ store.state().accelerated ? 'Standard' : 'Accelerated' }}

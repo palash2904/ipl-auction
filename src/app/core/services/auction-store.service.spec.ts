@@ -54,7 +54,7 @@ describe('AuctionStore', () => {
     expect(store.nextBidAmount(16)).toBe(18);
   });
 
-  it('records a bid and sells the player to the winning franchise', () => {
+  it('records a bid and sells the player to the winning franchise after confirmation', () => {
     const team = store.state().franchises[0];
     const otherTeam = store.state().franchises[1];
     const player = store.currentPlayer();
@@ -62,6 +62,10 @@ describe('AuctionStore', () => {
     expect(store.bid(team.id)).toBeNull();
     expect(store.currentPlayer()?.id).toBe(player?.id);
     expect(store.pass(otherTeam.id)).toBeNull();
+    expect(store.currentPlayer()?.id).toBe(player?.id);
+    expect(store.canSellCurrentPlayer()).toBeTrue();
+
+    store.sellCurrentPlayer();
 
     const soldPlayer = store.state().players.find((item) => item.id === player?.id);
     const updatedTeam = store.state().franchises.find((item) => item.id === team.id);
@@ -128,15 +132,23 @@ describe('AuctionStore', () => {
     expect(store.state().auctionLog[0].message).toBe('Auction ended by auction control');
   });
 
-  it('keeps a passed franchise out of the bidding until the next player starts', () => {
+  it('keeps a passed franchise out of the bidding until the player is sold', () => {
     const team = store.state().franchises[0];
     const otherTeam = store.state().franchises[1];
+    const player = store.currentPlayer();
 
     expect(store.pass(team.id)).toBeNull();
     expect(store.bid(team.id)).toContain('Team already passed on this player');
     expect(store.bid(otherTeam.id)).toBeNull();
 
-    expect(store.state().players.find((item) => item.id === store.state().bidHistory[0].playerId)?.status).toBe('sold');
+    expect(store.currentPlayer()?.id).toBe(player?.id);
+    expect(store.hasPassed(team.id)).toBeTrue();
+    expect(store.bidderStatusFor(team.id)).toContain('Passed');
+    expect(store.canSellCurrentPlayer()).toBeTrue();
+
+    store.sellCurrentPlayer();
+
+    expect(store.state().players.find((item) => item.id === player?.id)?.status).toBe('sold');
     expect(store.state().activeBidderIds).toEqual(store.state().franchises.map((item) => item.id));
   });
 
