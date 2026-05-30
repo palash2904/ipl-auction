@@ -72,6 +72,10 @@ const setDefinitions = [
 const roleOverrides = new Map<string, string>([
   ['MS Dhoni', 'WK-Batter'],
   ['AB de Villiers', 'WK-Batter'],
+  ['KL Rahul', 'WK-Batter'],
+  ['Sanju Samson', 'WK-Batter'],
+  ['Rishabh Pant', 'WK-Batter'],
+  ['Quinton de Kock', 'WK-Batter'],
   ['Lasith Malinga', 'Fast Bowler'],
   ['Jasprit Bumrah', 'Fast Bowler'],
   ['Rashid Khan', 'Spinner'],

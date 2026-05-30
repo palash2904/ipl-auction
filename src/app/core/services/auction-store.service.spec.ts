@@ -176,4 +176,25 @@ describe('AuctionStore', () => {
     expect(store.currentPlayer()?.status).toBe('available');
     expect(store.state().activeBidderIds.length).toBeGreaterThan(0);
   });
+
+  it('refreshes saved player metadata while preserving auction results', () => {
+    const dhoni = store.state().players.find((player) => player.name === 'MS Dhoni');
+    expect(dhoni).toBeTruthy();
+
+    const staleState = {
+      ...store.state(),
+      players: store.state().players.map((player) =>
+        player.id === dhoni?.id
+          ? { ...player, role: 'Batter', status: 'sold' as const, soldTo: store.state().franchises[0].id, soldPrice: 12 }
+          : player,
+      ),
+    };
+
+    store.applyRemoteState(staleState);
+
+    const refreshedDhoni = store.state().players.find((player) => player.id === dhoni?.id);
+    expect(refreshedDhoni?.role).toBe('WK-Batter');
+    expect(refreshedDhoni?.status).toBe('sold');
+    expect(refreshedDhoni?.soldPrice).toBe(12);
+  });
 });

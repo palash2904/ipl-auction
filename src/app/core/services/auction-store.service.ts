@@ -25,6 +25,21 @@ const shuffleSetWisePlayers = (players: Player[]): Player[] => {
   });
 };
 
+const refreshPlayerMetadata = (players: Player[]): Player[] => {
+  const latestPlayers = new Map(AUCTION_PLAYERS.map((player) => [player.id, player]));
+  return players.map((player) => {
+    const latest = latestPlayers.get(player.id);
+    return latest
+      ? {
+          ...latest,
+          soldPrice: player.soldPrice,
+          soldTo: player.soldTo,
+          status: player.status,
+        }
+      : player;
+  });
+};
+
 const initialState = (): AuctionState => ({
   franchises: [],
   players: structuredClone(AUCTION_PLAYERS),
@@ -486,6 +501,7 @@ export class AuctionStore {
     const normalized = {
       ...initialState(),
       ...state,
+      players: refreshPlayerMetadata(state.players ?? initialState().players),
       activeBidderIds: state.activeBidderIds ?? [],
       passedBidderIds: state.passedBidderIds ?? state.currentPassTeamIds ?? [],
       highestBidderId: state.currentBid?.teamId ?? state.highestBidderId ?? null,

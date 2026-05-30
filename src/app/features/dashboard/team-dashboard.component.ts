@@ -36,6 +36,22 @@ interface SquadScoreBreakdown {
   balanceRating: number;
 }
 
+const captaincyPreference = [
+  'MS Dhoni',
+  'Rohit Sharma',
+  'Pat Cummins',
+  'Shreyas Iyer',
+  'Hardik Pandya',
+  'Shubman Gill',
+  'KL Rahul',
+  'Suryakumar Yadav',
+  'Sanju Samson',
+  'Jasprit Bumrah',
+  'David Warner',
+];
+
+const captaincyPriority = new Map(captaincyPreference.map((name, index) => [name, index]));
+
 @Component({
   selector: 'app-team-dashboard',
   standalone: true,
@@ -62,7 +78,7 @@ export class TeamDashboardComponent {
       const deathSpecialists = bowlingOptions
         .filter((player) => player.role === 'Fast Bowler' || player.role === 'All-rounder')
         .slice(0, 2);
-      const [captain, viceCaptain] = [...playingXi].sort((a, b) => this.leadershipScore(b) - this.leadershipScore(a));
+      const [captain, viceCaptain] = this.pickCaptaincy(playingXi, franchise.id);
       const battingRating = this.roleRating(players, ['Batter', 'WK-Batter', 'All-rounder']);
       const bowlingRating = this.roleRating(players, ['Fast Bowler', 'Spinner', 'All-rounder']);
       const allRounderRating = this.roleRating(players, ['All-rounder']);
@@ -204,6 +220,29 @@ export class TeamDashboardComponent {
   private leadershipScore(player: Player): number {
     const roleBoost = ['Batter', 'WK-Batter', 'All-rounder'].includes(player.role) ? 10 : 0;
     return this.playerRating(player) + roleBoost + (player.stats?.matches ?? 0) / 12;
+  }
+
+  private pickCaptaincy(players: Player[], franchiseId: string): [Player | null, Player | null] {
+    const preferred = players
+      .filter((player) => captaincyPriority.has(player.name))
+      .sort((a, b) => (captaincyPriority.get(a.name) ?? 999) - (captaincyPriority.get(b.name) ?? 999));
+
+    const fallback = players
+      .filter((player) => !preferred.includes(player))
+      .sort((a, b) => this.stableCaptaincyFallback(franchiseId, b) - this.stableCaptaincyFallback(franchiseId, a));
+
+    const captain = preferred[0] ?? fallback[0] ?? null;
+    const viceCaptain = preferred[1] ?? fallback.find((player) => player.id !== captain?.id) ?? null;
+    return [captain, viceCaptain];
+  }
+
+  private stableCaptaincyFallback(franchiseId: string, player: Player): number {
+    const key = `${franchiseId}-${player.id}`;
+    let hash = 0;
+    for (let index = 0; index < key.length; index += 1) {
+      hash = (hash * 31 + key.charCodeAt(index)) % 100000;
+    }
+    return hash + this.leadershipScore(player);
   }
 
   private strengthsFor(scores: SquadScoreBreakdown): string[] {
