@@ -7,50 +7,17 @@
     <button class="btn primary" type="button" (click)="store.exportSquads()">Export PDF</button>
   </div>
 
-  @if (bestSquad(); as winner) {
+  @if (auctionComplete() && bestSquad(); as winner) {
     <section class="squad-analysis">
       <div class="section-head">
         <div>
           <p class="eyebrow">Post-auction review</p>
-          <h2>Squad Analysis</h2>
+          <h2>Best Squad</h2>
         </div>
         <div class="winner-badge">
-          <span>Best Squad</span>
+          <span>Winner</span>
           <strong>{{ winner.franchise.logoEmoji }} {{ winner.franchise.franchiseName }}</strong>
         </div>
-      </div>
-
-      <div class="ranking-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Franchise</th>
-              <th>Overall</th>
-              <th>Batting</th>
-              <th>Bowling</th>
-              <th>AR</th>
-              <th>WK</th>
-              <th>Depth</th>
-              <th>Balance</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (analysis of squadAnalysis(); track analysis.franchise.id) {
-              <tr>
-                <td>#{{ analysis.rank }}</td>
-                <td>{{ analysis.franchise.logoEmoji }} {{ analysis.franchise.franchiseName }}</td>
-                <td><strong>{{ analysis.overallRating }}</strong></td>
-                <td>{{ analysis.battingRating }}</td>
-                <td>{{ analysis.bowlingRating }}</td>
-                <td>{{ analysis.allRounderRating }}</td>
-                <td>{{ analysis.wicketkeeperRating }}</td>
-                <td>{{ analysis.depthRating }}</td>
-                <td>{{ analysis.balanceRating }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
       </div>
 
       <div class="analysis-grid">

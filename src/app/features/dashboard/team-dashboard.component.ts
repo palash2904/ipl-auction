@@ -60,6 +60,7 @@ const captaincyPriority = new Map(captaincyPreference.map((name, index) => [name
 })
 export class TeamDashboardComponent {
   protected readonly store = inject(AuctionStore);
+  protected readonly auctionComplete = computed(() => this.store.state().phase === 'complete');
   protected readonly squadAnalysis = computed(() => this.buildSquadAnalysis());
   protected readonly bestSquad = computed(() => this.squadAnalysis()[0] ?? null);
 

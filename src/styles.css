@@ -604,13 +604,6 @@ td {
   color: var(--gold);
 }
 
-.ranking-table {
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(17, 24, 39, 0.82);
-}
-
 .analysis-grid {
   grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
 }
