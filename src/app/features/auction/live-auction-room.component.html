@@ -44,10 +44,10 @@
       </article>
 
       <div class="control-rack">
-        <button class="btn ghost" type="button" (click)="store.undoLastBid()" [disabled]="!session.canControlAuction()">Undo Bid</button>
+        <!-- <button class="btn ghost" type="button" (click)="store.undoLastBid()" [disabled]="!session.canControlAuction()">Undo Bid</button>
         <button class="btn ghost" type="button" (click)="store.toggleAccelerated()" [disabled]="!session.canControlAuction()">
           {{ store.state().accelerated ? 'Standard' : 'Accelerated' }}
-        </button>
+        </button> -->
         <button class="btn ghost" type="button" (click)="generateCommentary()" [disabled]="aiLoading">
           {{ aiLoading ? 'Thinking...' : 'AI Commentary' }}
         </button>
