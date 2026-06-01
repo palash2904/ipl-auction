@@ -3,6 +3,10 @@ import { auctionReadyGuard } from './core/guards/auction-ready.guard';
 
 export const routes: Routes = [
   {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login-page.component').then((m) => m.LoginPageComponent),
+  },
+  {
     path: 'guide',
     loadComponent: () => import('./features/guide/how-to-play.component').then((m) => m.HowToPlayComponent),
   },

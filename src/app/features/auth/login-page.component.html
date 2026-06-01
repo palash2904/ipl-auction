@@ -1,0 +1,35 @@
+<section class="page-grid login-page">
+  <div class="hero-copy">
+    <p class="eyebrow">Secure auction access</p>
+    <h1>Login to manage the room.</h1>
+    <p>
+      Use your auction credentials to enter the setup console and prepare the live
+      bidding room.
+    </p>
+  </div>
+
+  <form class="login-panel" [formGroup]="form" (ngSubmit)="login()">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Login</p>
+        <h2>Welcome back</h2>
+      </div>
+    </div>
+
+    <label>
+      Email
+      <input formControlName="email" type="email" placeholder="admin@auction.com" autocomplete="email" />
+    </label>
+
+    <label>
+      Password
+      <input formControlName="password" type="password" placeholder="Enter password" autocomplete="current-password" />
+    </label>
+
+    @if (loginError) {
+      <div class="alert">{{ loginError }}</div>
+    }
+
+    <button class="btn primary" type="submit">Login</button>
+  </form>
+</section>

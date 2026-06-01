@@ -57,6 +57,10 @@ export class SetupPageComponent {
     if (this.store.loadSavedState()) this.router.navigateByUrl('/auction');
   }
 
+  login(): void {
+    this.router.navigateByUrl('/login');
+  }
+
   async resetRoom(): Promise<void> {
     this.resettingRoom = true;
     this.resetError = '';

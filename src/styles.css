@@ -168,6 +168,14 @@ th {
   align-items: start;
 }
 
+.login-page {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(22rem, 0.7fr);
+  gap: 1.5rem;
+  align-items: center;
+  min-height: calc(100vh - 6rem);
+}
+
 .hero-copy {
   min-height: 36rem;
   display: flex;
@@ -253,6 +261,7 @@ h4 {
 
 .setup-panel,
 .join-panel,
+.login-panel,
 .team-card,
 .analysis-card,
 .side-panel,
@@ -268,6 +277,7 @@ h4 {
 
 .setup-panel,
 .join-panel,
+.login-panel,
 .team-card,
 .analysis-card,
 .history-panel,
@@ -904,6 +914,7 @@ td {
 @media (max-width: 980px) {
   .topbar,
   .setup-hero,
+  .login-page,
   .join-page,
   .auction-layout,
   .player-card {
