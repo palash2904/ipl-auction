@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuctionStore } from '../../core/services/auction-store.service';
 import { AiCommentaryService } from '../../core/services/ai-commentary.service';
 import { MultiplayerSessionService } from '../../core/services/multiplayer-session.service';
+import { Player } from '../../models/auction.models';
 import { CrorePipe } from '../../shared/pipes/crore.pipe';
 
 @Component({
@@ -17,10 +18,12 @@ export class LiveAuctionRoomComponent {
   protected readonly ai = inject(AiCommentaryService);
   protected readonly session = inject(MultiplayerSessionService);
   private readonly router = inject(Router);
+  private readonly currentSetPlayerOrders = new Map<number, string[]>();
   protected readonly currentSetPlayers = computed(() => {
     const currentSetNumber = this.store.currentPlayer()?.setNumber;
     if (!currentSetNumber) return [];
-    return this.store.state().players.filter((player) => player.setNumber === currentSetNumber);
+    const players = this.store.state().players.filter((player) => player.setNumber === currentSetNumber);
+    return this.randomizedSetPlayers(currentSetNumber, players);
   });
   protected bidError = '';
   protected soldFlash = false;
@@ -96,5 +99,32 @@ export class LiveAuctionRoomComponent {
     if (!player) return 'status-unknown';
     if (player.id === this.store.state().currentPlayerId && player.status === 'available') return 'status-current';
     return `status-${player.status}`;
+  }
+
+  private randomizedSetPlayers(setNumber: number, players: Player[]): Player[] {
+    const playerIds = new Set(players.map((player) => player.id));
+    const cachedOrder = this.currentSetPlayerOrders.get(setNumber);
+
+    if (!cachedOrder || cachedOrder.length !== players.length || cachedOrder.some((id) => !playerIds.has(id))) {
+      this.currentSetPlayerOrders.set(setNumber, this.shuffleIds(players.map((player) => player.id)));
+    }
+
+    const order = this.currentSetPlayerOrders.get(setNumber) ?? [];
+    const orderIndex = new Map(order.map((id, index) => [id, index]));
+
+    return [...players].sort(
+      (first, second) =>
+        (orderIndex.get(first.id) ?? Number.MAX_SAFE_INTEGER) -
+        (orderIndex.get(second.id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }
+
+  private shuffleIds(ids: string[]): string[] {
+    const shuffled = [...ids];
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+    }
+    return shuffled;
   }
 }

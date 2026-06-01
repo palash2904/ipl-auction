@@ -100,6 +100,7 @@ const indianNames = new Set([
   'Jagadeesha Suchith',
 ]);
 
+//pathrina, teekshna, 
 const setDefinitions = [
   ['MARQUEE LEGENDS', ['MS Dhoni', 'Virat Kohli', 'Rohit Sharma', 'AB de Villiers', 'Chris Gayle', 'Lasith Malinga']],
   ['MARQUEE LEGENDS', ['Jasprit Bumrah', 'Rashid Khan', 'Pat Cummins', 'Glenn Maxwell', 'Ben Stokes', 'Hardik Pandya']],
