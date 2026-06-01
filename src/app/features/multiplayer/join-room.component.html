@@ -47,9 +47,9 @@
   <aside class="join-panel">
     <div class="section-head">
       <h2>Connected Members</h2>
-      <button class="btn danger compact" type="button" (click)="resetRoom()" [disabled]="resettingRoom">
+      <!-- <button class="btn danger compact" type="button" (click)="resetRoom()" [disabled]="resettingRoom">
         {{ resettingRoom ? 'Resetting...' : 'Reset Room' }}
-      </button>
+      </button> -->
     </div>
     @for (member of session.members(); track member.uid) {
       <div class="history-row">

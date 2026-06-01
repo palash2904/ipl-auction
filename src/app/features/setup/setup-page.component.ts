@@ -21,8 +21,8 @@ export class SetupPageComponent {
 
   protected readonly form = this.fb.group({
     teams: this.fb.array([
-      this.createTeam('Dhoni Super Kings', 'Ananya', '\u{1F981}'),
-      this.createTeam('Mumbai Legends', 'Rohan', '\u{1F499}'),
+      this.createTeam('Franchise 1', 'Palash', '\u{1F981}'),
+      this.createTeam('Franchise 2', 'Rohan', '\u{1F499}'),
     ]),
   });
 

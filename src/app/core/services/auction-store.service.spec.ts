@@ -3,8 +3,8 @@ import { AUCTION_PLAYERS } from '../../features/auction/data/players.data';
 import { AuctionStore } from './auction-store.service';
 
 const teams = [
-  { ownerName: 'Ananya', franchiseName: 'Dhoni Super Kings', logoEmoji: '\u{1F981}' },
-  { ownerName: 'Rohan', franchiseName: 'Mumbai Legends', logoEmoji: '\u{1F499}' },
+  { ownerName: 'Palash', franchiseName: 'Franchise 1', logoEmoji: '\u{1F981}' },
+  { ownerName: 'Rohan', franchiseName: 'Franchise 2', logoEmoji: '\u{1F499}' },
 ];
 
 describe('AuctionStore', () => {
