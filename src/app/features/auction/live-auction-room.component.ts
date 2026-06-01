@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuctionStore } from '../../core/services/auction-store.service';
 import { AiCommentaryService } from '../../core/services/ai-commentary.service';
@@ -17,10 +17,16 @@ export class LiveAuctionRoomComponent {
   protected readonly ai = inject(AiCommentaryService);
   protected readonly session = inject(MultiplayerSessionService);
   private readonly router = inject(Router);
+  protected readonly currentSetPlayers = computed(() => {
+    const currentSetNumber = this.store.currentPlayer()?.setNumber;
+    if (!currentSetNumber) return [];
+    return this.store.state().players.filter((player) => player.setNumber === currentSetNumber);
+  });
   protected bidError = '';
   protected soldFlash = false;
   protected aiLine = '';
   protected aiLoading = false;
+  protected showCurrentSet = false;
 
   constructor() {
     effect(() => {
@@ -71,5 +77,24 @@ export class LiveAuctionRoomComponent {
     this.aiLoading = true;
     this.aiLine = await this.ai.generateAuctioneerLine();
     this.aiLoading = false;
+  }
+
+  statusFor(playerId: string): string {
+    const player = this.store.state().players.find((item) => item.id === playerId);
+    if (!player) return 'Unknown';
+    if (player.id === this.store.state().currentPlayerId && player.status === 'available') return 'Current';
+    if (player.status === 'sold') {
+      const team = this.store.state().franchises.find((item) => item.id === player.soldTo);
+      return team ? `Sold to ${team.franchiseName}` : 'Sold';
+    }
+    if (player.status === 'unsold') return 'Unsold';
+    return 'Available';
+  }
+
+  statusClassFor(playerId: string): string {
+    const player = this.store.state().players.find((item) => item.id === playerId);
+    if (!player) return 'status-unknown';
+    if (player.id === this.store.state().currentPlayerId && player.status === 'available') return 'status-current';
+    return `status-${player.status}`;
   }
 }

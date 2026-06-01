@@ -5,6 +5,11 @@
         <p class="eyebrow">{{ store.currentSetTitle() }}</p>
         <h1>Live Auction Room</h1>
       </div>
+      @if (store.currentPlayer()) {
+        <button class="btn ghost" type="button" (click)="showCurrentSet = !showCurrentSet">
+          {{ showCurrentSet ? 'Hide Current Set' : 'View Current Set' }}
+        </button>
+      }
     </div>
 
     @if (store.currentPlayer(); as player) {
@@ -51,6 +56,35 @@
       </div>
       @if (bidError) {
         <div class="alert">{{ bidError }}</div>
+      }
+
+      @if (showCurrentSet) {
+        <section class="current-set-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">{{ store.currentSetTitle() }}</p>
+              <h2>Current Set Players</h2>
+            </div>
+            <span class="status-pill">{{ currentSetPlayers().length }} players</span>
+          </div>
+          <div class="current-set-list">
+            @for (setPlayer of currentSetPlayers(); track setPlayer.id) {
+              <div class="set-player-row" [class.active]="setPlayer.id === store.state().currentPlayerId">
+                <img [src]="setPlayer.image" [alt]="setPlayer.name" />
+                <div class="team-summary">
+                  <strong>{{ setPlayer.name }}</strong>
+                  <small>{{ setPlayer.role }} &middot; {{ setPlayer.overseas ? 'Overseas' : 'Indian' }} &middot; Base {{ setPlayer.basePrice | crore }}</small>
+                </div>
+                <span class="player-status" [ngClass]="statusClassFor(setPlayer.id)">
+                  {{ statusFor(setPlayer.id) }}
+                  @if (setPlayer.status === 'sold') {
+                    &middot; {{ setPlayer.soldPrice | crore }}
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </section>
       }
     } @else {
       <article class="player-card empty-state">

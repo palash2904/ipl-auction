@@ -497,7 +497,8 @@ dd {
 }
 
 .purse-row,
-.mini-player {
+.mini-player,
+.set-player-row {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -543,6 +544,70 @@ td {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px rgba(248, 201, 74, 0.16);
   animation: flash 0.8s infinite alternate;
+}
+
+.current-set-panel {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.82);
+}
+
+.current-set-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.set-player-row {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.set-player-row.active {
+  border-color: var(--gold);
+  background: rgba(248, 201, 74, 0.1);
+}
+
+.set-player-row img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.player-status {
+  justify-self: end;
+  padding: 0.38rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-align: right;
+}
+
+.status-current {
+  border-color: rgba(248, 201, 74, 0.55);
+  background: rgba(248, 201, 74, 0.12);
+  color: var(--gold);
+}
+
+.status-sold {
+  border-color: rgba(89, 217, 142, 0.5);
+  background: rgba(89, 217, 142, 0.12);
+  color: var(--green);
+}
+
+.status-unsold {
+  border-color: rgba(255, 91, 110, 0.45);
+  background: rgba(255, 91, 110, 0.12);
+  color: #ffb9c2;
 }
 
 .history-panel {
@@ -905,6 +970,16 @@ td {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: start;
     gap: 0.75rem;
+  }
+
+  .set-player-row {
+    grid-template-columns: 3rem minmax(0, 1fr);
+  }
+
+  .player-status {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    text-align: left;
   }
 
   .paddle-actions {
