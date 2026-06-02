@@ -44,6 +44,6 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/summary/auction-summary.component').then((m) => m.AuctionSummaryComponent),
   },
-  { path: '', pathMatch: 'full', redirectTo: 'setup' },
-  { path: '**', redirectTo: 'setup' },
+  { path: '', pathMatch: 'full', redirectTo: 'guide' },
+  { path: '**', redirectTo: 'guide' },
 ];

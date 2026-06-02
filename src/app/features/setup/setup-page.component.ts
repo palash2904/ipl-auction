@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuctionStore } from '../../core/services/auction-store.service';
 import { MultiplayerSessionService } from '../../core/services/multiplayer-session.service';
+import { SetupAuthService } from '../../core/services/setup-auth.service';
 
 @Component({
   selector: 'app-setup-page',
@@ -14,6 +15,7 @@ import { MultiplayerSessionService } from '../../core/services/multiplayer-sessi
 export class SetupPageComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly setupAuth = inject(SetupAuthService);
   protected readonly store = inject(AuctionStore);
   protected readonly session = inject(MultiplayerSessionService);
   protected resettingRoom = false;
@@ -57,8 +59,9 @@ export class SetupPageComponent {
     if (this.store.loadSavedState()) this.router.navigateByUrl('/auction');
   }
 
-  login(): void {
-    this.router.navigateByUrl('/login');
+  logout(): void {
+    this.setupAuth.logout();
+    this.router.navigateByUrl('/guide');
   }
 
   async resetRoom(): Promise<void> {

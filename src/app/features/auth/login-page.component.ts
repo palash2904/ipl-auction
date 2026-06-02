@@ -1,32 +1,71 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import emailjs from '@emailjs/browser';
+import { SetupAuthService } from '../../core/services/setup-auth.service';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './login-page.component.html',
 })
 export class LoginPageComponent {
-  private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly setupAuth = inject(SetupAuthService);
+
   protected loginError = '';
+  protected otpSent = false;
+  protected enteredOtp = '';
 
-  protected readonly form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-  });
+  formData = {
+    from_name: '',
+    from_email: ''
+  };
 
-  login(): void {
-    this.form.markAllAsTouched();
+  sendEmail() {
     this.loginError = '';
-    if (this.form.invalid) {
-      this.loginError = 'Enter a valid email and password.';
+    this.otpSent = false;
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    this.setupAuth.setGeneratedOtp(otp);
+
+    const expiryTime = new Date(
+      Date.now() + 15 * 60 * 1000
+    ).toLocaleTimeString();
+
+    emailjs.send(
+      'service_3rf05ne',
+      'template_947c63i',
+      {
+        passcode: otp,
+        time: expiryTime,
+        email: this.formData.from_email
+      },
+      'ytNS73UeBqMxeuJvB'
+    )
+      .then((response) => {
+        console.log('SUCCESS!', response);
+        this.otpSent = true;
+        this.enteredOtp = '';
+        alert('OTP sent successfully');
+      })
+      .catch((error) => {
+        this.setupAuth.setGeneratedOtp('');
+        this.loginError = 'Enter a valid email and password.';
+        console.error('FAILED!', error);
+        alert('Failed to send OTP');
+      });
+  }
+
+  verifyOtp(): void {
+    this.loginError = '';
+    if (this.setupAuth.verifyOtp(this.enteredOtp)) {
+      this.router.navigateByUrl('/setup');
       return;
     }
 
-    this.router.navigateByUrl('/setup');
+    this.loginError = 'Invalid OTP. Please enter the OTP sent to your email.';
   }
+
 }

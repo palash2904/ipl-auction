@@ -7,29 +7,43 @@
       bidding room.
     </p>
   </div>
-
-  <form class="login-panel" [formGroup]="form" (ngSubmit)="login()">
+  <form class="login-panel" (ngSubmit)="otpSent ? verifyOtp() : sendEmail()">
     <div class="section-head">
       <div>
         <p class="eyebrow">Login</p>
         <h2>Welcome back</h2>
       </div>
     </div>
-
     <label>
       Email
-      <input formControlName="email" type="email" placeholder="admin@auction.com" autocomplete="email" />
+      <input
+        type="email"
+        [(ngModel)]="formData.from_email"
+        name="from_email"
+        placeholder="Email"
+        required
+        [disabled]="otpSent"
+      />
     </label>
-
-    <label>
-      Password
-      <input formControlName="password" type="password" placeholder="Enter password" autocomplete="current-password" />
-    </label>
-
-    @if (loginError) {
-      <div class="alert">{{ loginError }}</div>
+    @if (otpSent) {
+      <label>
+        OTP
+        <input
+          type="text"
+          [(ngModel)]="enteredOtp"
+          name="enteredOtp"
+          placeholder="Enter OTP"
+          inputmode="numeric"
+          maxlength="6"
+          required
+        />
+      </label>
     }
-
-    <button class="btn primary" type="submit">Login</button>
+    @if (loginError) {
+    <div class="alert">{{ loginError }}</div>
+    }
+    <button class="btn primary" type="submit">
+      {{ otpSent ? 'Verify OTP' : 'Send OTP' }}
+    </button>
   </form>
 </section>

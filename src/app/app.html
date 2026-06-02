@@ -10,7 +10,9 @@
 
     <nav class="nav-links" aria-label="Primary">
       <a routerLink="/guide" routerLinkActive="active">Guide</a>
-      <a routerLink="/setup" routerLinkActive="active">Setup</a>
+      @if (setupAuth.setupAccess()) {
+        <a routerLink="/setup" routerLinkActive="active">Setup</a>
+      }
       <a routerLink="/join" routerLinkActive="active">Join</a>
       <a routerLink="/auction" routerLinkActive="active">Live Room</a>
       <a routerLink="/dashboard" routerLinkActive="active">Teams</a>
