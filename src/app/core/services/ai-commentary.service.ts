@@ -42,7 +42,7 @@ export class AiCommentaryService {
       const result = await model.generateContent(prompt);
       return result.response.text().trim() || this.localCommentary();
     } catch (error) {
-      console.warn('AI commentary failed', error);
+      console.warn('Commentary failed', error);
       return this.localCommentary();
     }
   }

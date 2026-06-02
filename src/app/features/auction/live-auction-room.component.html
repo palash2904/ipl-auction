@@ -6,91 +6,93 @@
         <h1>Live Auction Room</h1>
       </div>
       @if (store.currentPlayer()) {
-        <button class="btn ghost" type="button" (click)="showCurrentSet = !showCurrentSet">
-          {{ showCurrentSet ? 'Hide Current Set' : 'View Current Set' }}
-        </button>
+      <button class="btn ghost" type="button" (click)="showCurrentSet = !showCurrentSet">
+        {{ showCurrentSet ? 'Hide Current Set' : 'View Current Set' }}
+      </button>
       }
     </div>
 
     @if (store.currentPlayer(); as player) {
-      @if (!session.currentMember()) {
-        <div class="alert">Join as a team owner first. Your franchise bid paddle will unlock after you join.</div>
-      }
-      <article class="player-card">
-        <img [src]="player.image" [alt]="player.name" />
-        <div class="player-info">
-          <p class="eyebrow">{{ player.role }} · {{ player.overseas ? 'Overseas' : 'Indian' }}</p>
-          <h2>{{ player.name }}</h2>
-          <div class="price-strip">
-            <span>Base {{ player.basePrice | crore }}</span>
-            <strong>{{ store.displayBidAmount() | crore }}</strong>
-          </div>
-          <div class="stats-row">
-            <span>{{ player.stats?.matches || 0 }} matches</span>
-            <span>{{ player.stats?.runs || 0 }} runs</span>
-            <span>{{ player.stats?.wickets || 0 }} wickets</span>
-          </div>
-          <div class="live-commentary">
-            @if (store.state().currentBid) {
-              {{ store.state().currentBid?.teamName }} leads the table.
-            } @else {
-              Opening at base price. Awaiting first paddle.
-            }
-          </div>
+    @if (!session.currentMember()) {
+    <div class="alert">Join as a team owner first. Your franchise bid paddle will unlock after you join.</div>
+    }
+    <article class="player-card">
+      <img [src]="player.image" [alt]="player.name" />
+      <div class="player-info">
+        <p class="eyebrow">{{ player.role }} · {{ player.overseas ? 'Overseas' : 'Indian' }}</p>
+        <h2>{{ player.name }}</h2>
+        <div class="price-strip">
+          <span>Base {{ player.basePrice | crore }}</span>
+          <strong>{{ store.displayBidAmount() | crore }}</strong>
         </div>
-        @if (soldFlash) {
-          <div class="sold-banner">SOLD</div>
-        }
-      </article>
+        <div class="stats-row">
+          <span>{{ player.stats?.matches || 0 }} matches</span>
+          <span>{{ player.stats?.runs || 0 }} runs</span>
+          <span>{{ player.stats?.wickets || 0 }} wickets</span>
+        </div>
+        <div class="live-commentary">
+          @if (store.state().currentBid) {
+          {{ store.state().currentBid?.teamName }} leads the table.
+          } @else {
+          Opening at base price. Awaiting first paddle.
+          }
+        </div>
+      </div>
+      @if (soldFlash) {
+      <div class="sold-banner">SOLD</div>
+      }
+    </article>
 
-      <div class="control-rack">
-        <!-- <button class="btn ghost" type="button" (click)="store.undoLastBid()" [disabled]="!session.canControlAuction()">Undo Bid</button>
+    <div class="control-rack">
+      <!-- <button class="btn ghost" type="button" (click)="store.undoLastBid()" [disabled]="!session.canControlAuction()">Undo Bid</button>
         <button class="btn ghost" type="button" (click)="store.toggleAccelerated()" [disabled]="!session.canControlAuction()">
           {{ store.state().accelerated ? 'Standard' : 'Accelerated' }}
         </button> -->
-        <button class="btn ghost" type="button" (click)="generateCommentary()" [disabled]="aiLoading">
-          {{ aiLoading ? 'Thinking...' : 'AI Commentary' }}
-        </button>
-        <button class="btn ghost" type="button" (click)="store.saveState()">Save</button>
-        <button class="btn danger" type="button" (click)="endAuction()" [disabled]="!session.canControlAuction()">End Auction</button>
-      </div>
-      @if (bidError) {
-        <div class="alert">{{ bidError }}</div>
-      }
+      <button class="btn ghost" type="button" (click)="generateCommentary()" [disabled]="aiLoading">
+        {{ aiLoading ? 'Thinking...' : 'Commentary' }}
+      </button>
+      <button class="btn ghost" type="button" (click)="store.saveState()">Save</button>
+      <button class="btn danger" type="button" (click)="endAuction()" [disabled]="!session.canControlAuction()">End
+        Auction</button>
+    </div>
+    @if (bidError) {
+    <div class="alert">{{ bidError }}</div>
+    }
 
-      @if (showCurrentSet) {
-        <section class="current-set-panel">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">{{ store.currentSetTitle() }}</p>
-              <h2>Current Set Players</h2>
-            </div>
-            <span class="status-pill">{{ currentSetPlayers().length }} players</span>
+    @if (showCurrentSet) {
+    <section class="current-set-panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">{{ store.currentSetTitle() }}</p>
+          <h2>Current Set Players</h2>
+        </div>
+        <span class="status-pill">{{ currentSetPlayers().length }} players</span>
+      </div>
+      <div class="current-set-list">
+        @for (setPlayer of currentSetPlayers(); track setPlayer.id) {
+        <div class="set-player-row" [class.active]="setPlayer.id === store.state().currentPlayerId">
+          <img [src]="setPlayer.image" [alt]="setPlayer.name" />
+          <div class="team-summary">
+            <strong>{{ setPlayer.name }}</strong>
+            <small>{{ setPlayer.role }} &middot; {{ setPlayer.overseas ? 'Overseas' : 'Indian' }} &middot; Base {{
+              setPlayer.basePrice | crore }}</small>
           </div>
-          <div class="current-set-list">
-            @for (setPlayer of currentSetPlayers(); track setPlayer.id) {
-              <div class="set-player-row" [class.active]="setPlayer.id === store.state().currentPlayerId">
-                <img [src]="setPlayer.image" [alt]="setPlayer.name" />
-                <div class="team-summary">
-                  <strong>{{ setPlayer.name }}</strong>
-                  <small>{{ setPlayer.role }} &middot; {{ setPlayer.overseas ? 'Overseas' : 'Indian' }} &middot; Base {{ setPlayer.basePrice | crore }}</small>
-                </div>
-                <span class="player-status" [ngClass]="statusClassFor(setPlayer.id)">
-                  {{ statusFor(setPlayer.id) }}
-                  @if (setPlayer.status === 'sold') {
-                    &middot; {{ setPlayer.soldPrice | crore }}
-                  }
-                </span>
-              </div>
+          <span class="player-status" [ngClass]="statusClassFor(setPlayer.id)">
+            {{ statusFor(setPlayer.id) }}
+            @if (setPlayer.status === 'sold') {
+            &middot; {{ setPlayer.soldPrice | crore }}
             }
-          </div>
-        </section>
-      }
+          </span>
+        </div>
+        }
+      </div>
+    </section>
+    }
     } @else {
-      <article class="player-card empty-state">
-        <h2>Auction complete</h2>
-        <p>All available players have passed through the room.</p>
-      </article>
+    <article class="player-card empty-state">
+      <h2>Auction complete</h2>
+      <p>All available players have passed through the room.</p>
+    </article>
     }
   </div>
 
@@ -103,59 +105,49 @@
     </div>
     <div class="purse-list">
       @for (team of store.state().franchises; track team.id) {
-        <div
-          class="purse-row"
-          [class.leading]="store.isHighestBidder(team.id)"
-        >
-          <span class="team-avatar">{{ team.logoEmoji }}</span>
-          <span class="team-summary">
-            <strong>{{ team.franchiseName }}</strong>
-            <small>{{ team.purseRemaining | crore }} · {{ team.playerIds.length }}/25 squad · {{ store.overseasUsed(team.id) }}/8 overseas</small>
-            <small class="pass-status">{{ store.bidderStatusFor(team.id) }}</small>
-          </span>
-          <span class="paddle-actions">
-            <button
-              class="btn primary compact"
-              type="button"
-              (click)="bid(team.id)"
-              [disabled]="!!store.bidErrorFor(team) || !session.canBid(team.id)"
-              [title]="store.bidErrorFor(team) || (session.canBid(team.id) ? 'Bid now' : 'Only this team owner can bid')"
-            >
-              Bid
-            </button>
-            <button
-              class="btn ghost compact"
-              type="button"
-              (click)="pass(team.id)"
-              [disabled]="!!store.passErrorFor(team) || !session.canBid(team.id)"
-              [title]="store.passErrorFor(team) || (session.canBid(team.id) ? 'Pass' : 'Only this team owner can pass')"
-            >
-              Pass
-            </button>
-          </span>
-        </div>
+      <div class="purse-row" [class.leading]="store.isHighestBidder(team.id)">
+        <span class="team-avatar">{{ team.logoEmoji }}</span>
+        <span class="team-summary">
+          <strong>{{ team.franchiseName }}</strong>
+          <small>{{ team.purseRemaining | crore }} · {{ team.playerIds.length }}/25 squad · {{
+            store.overseasUsed(team.id) }}/8 overseas</small>
+          <small class="pass-status">{{ store.bidderStatusFor(team.id) }}</small>
+        </span>
+        <span class="paddle-actions">
+          <button class="btn primary compact" type="button" (click)="bid(team.id)"
+            [disabled]="!!store.bidErrorFor(team) || !session.canBid(team.id)"
+            [title]="store.bidErrorFor(team) || (session.canBid(team.id) ? 'Bid now' : 'Only this team owner can bid')">
+            Bid
+          </button>
+          <button class="btn ghost compact" type="button" (click)="pass(team.id)"
+            [disabled]="!!store.passErrorFor(team) || !session.canBid(team.id)"
+            [title]="store.passErrorFor(team) || (session.canBid(team.id) ? 'Pass' : 'Only this team owner can pass')">
+            Pass
+          </button>
+        </span>
+      </div>
       }
     </div>
 
     <div class="history-panel">
       <h2>Bid History</h2>
       @for (bid of store.state().bidHistory.slice(0, 8); track bid.id) {
-        <div class="history-row">
-          <span>{{ bid.teamName }}</span>
-          <strong>{{ bid.amount | crore }}</strong>
-        </div>
+      <div class="history-row">
+        <span>{{ bid.teamName }}</span>
+        <strong>{{ bid.amount | crore }}</strong>
+      </div>
       } @empty {
-        <p class="muted">No bids yet.</p>
+      <p class="muted">No bids yet.</p>
       }
     </div>
 
     <div class="history-panel commentary">
       <h2>Live Commentary</h2>
       @if (aiLine) {
-        <p class="ai-line">{{ aiLine }}</p>
+      <p class="ai-line">{{ aiLine }}</p>
       }
       @for (entry of store.state().auctionLog.slice(0, 5); track entry.id) {
-        <p>{{ entry.message }}</p>
+      <p>{{ entry.message }}</p>
       }
     </div>
   </aside>
