@@ -509,8 +509,8 @@ export class AuctionStore {
 
   private incrementFor(amount: number): number {
     // if (amount > 15) return 2;
-    if (amount > 10) return 1;
-    if (amount >= 2) return 0.5;
+    if (amount >= 15) return 1;
+    if (amount >= 5) return 0.5;
     return 0.25;
   }
 

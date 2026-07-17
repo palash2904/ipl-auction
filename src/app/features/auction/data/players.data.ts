@@ -246,10 +246,10 @@ const roleOverrides: any = new Map<string, string>([
 ]);
 
 const roleForSet = (setNumber: number): string => {
-  if ([5, 6, 14].includes(setNumber)) return 'All-rounder';
-  if ([7, 13].includes(setNumber)) return 'WK-Batter';
-  if ([8, 9, 15].includes(setNumber)) return 'Fast Bowler';
-  if ([10, 11, 16].includes(setNumber)) return 'Spinner';
+  if ([3, 4, 12].includes(setNumber)) return 'All-rounder';
+  if ([5, 11].includes(setNumber)) return 'WK-Batter';
+  if ([6, 7, 13].includes(setNumber)) return 'Fast Bowler';
+  if ([8, 9, 14].includes(setNumber)) return 'Spinner';
   return 'Batter';
 };
 
