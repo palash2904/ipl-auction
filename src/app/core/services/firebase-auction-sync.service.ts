@@ -1,5 +1,5 @@
 import { effect, Injectable, inject, signal } from '@angular/core';
-import { doc, Firestore, getFirestore, onSnapshot, setDoc, Unsubscribe } from 'firebase/firestore';
+import { doc, Firestore, getDocFromServer, getFirestore, onSnapshot, setDoc, Unsubscribe } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
 import { AuctionState } from '../../models/auction.models';
 import { AuctionStore } from './auction-store.service';
@@ -76,6 +76,32 @@ export class FirebaseAuctionSyncService {
   destroy(): void {
     this.unsubscribe?.();
     if (this.writeTimer) clearTimeout(this.writeTimer);
+  }
+
+  async refreshFromFirebase(): Promise<string | null> {
+    if (!this.roomRef) return 'Firebase sync is not available.';
+
+    try {
+      const snapshot = await getDocFromServer(this.roomRef);
+      const remoteState = snapshot.data()?.['state'] as AuctionState | undefined;
+      if (!remoteState) return 'No Firebase auction state found yet.';
+
+      const normalizedRemoteState = this.normalizeState(remoteState);
+      const remoteSignature = this.signature(normalizedRemoteState);
+      this.applyingRemote = true;
+      this.store.applyRemoteState(normalizedRemoteState);
+      this.lastSyncedSignature = remoteSignature;
+      this.hydratedFromRemote = true;
+      this.lastError.set('');
+      this.status.set('Firebase refreshed');
+      queueMicrotask(() => (this.applyingRemote = false));
+      return null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Firebase refresh failed';
+      this.lastError.set(message);
+      this.status.set('Firebase sync error');
+      return message;
+    }
   }
 
   private scheduleWrite(state: AuctionState, signature: string): void {

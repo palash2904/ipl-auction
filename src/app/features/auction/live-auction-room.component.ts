@@ -3,6 +3,7 @@ import { Component, computed, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuctionStore } from '../../core/services/auction-store.service';
 import { AiCommentaryService } from '../../core/services/ai-commentary.service';
+import { FirebaseAuctionSyncService } from '../../core/services/firebase-auction-sync.service';
 import { MultiplayerSessionService } from '../../core/services/multiplayer-session.service';
 import { Player } from '../../models/auction.models';
 import { CrorePipe } from '../../shared/pipes/crore.pipe';
@@ -16,6 +17,7 @@ import { CrorePipe } from '../../shared/pipes/crore.pipe';
 export class LiveAuctionRoomComponent {
   protected readonly store = inject(AuctionStore);
   protected readonly ai = inject(AiCommentaryService);
+  protected readonly sync = inject(FirebaseAuctionSyncService);
   protected readonly session = inject(MultiplayerSessionService);
   private readonly router = inject(Router);
   private readonly currentSetPlayerOrders = new Map<number, string[]>();
@@ -29,6 +31,7 @@ export class LiveAuctionRoomComponent {
   protected soldFlash = false;
   protected aiLine = '';
   protected aiLoading = false;
+  protected refreshLoading = false;
   protected showCurrentSet = false;
 
   constructor() {
@@ -80,6 +83,13 @@ export class LiveAuctionRoomComponent {
     this.aiLoading = true;
     this.aiLine = await this.ai.generateAuctioneerLine();
     this.aiLoading = false;
+  }
+
+  async refreshBids(): Promise<void> {
+    this.refreshLoading = true;
+    const error = await this.sync.refreshFromFirebase();
+    this.bidError = error ?? '';
+    this.refreshLoading = false;
   }
 
   statusFor(playerId: string): string {

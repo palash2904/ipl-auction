@@ -242,6 +242,11 @@ h4 {
   font-size: 0.8rem;
 }
 
+.refresh-bids-btn {
+  min-width: 4.75rem;
+  white-space: nowrap;
+}
+
 .btn.primary {
   border-color: rgba(248, 201, 74, 0.55);
   background: var(--gold);

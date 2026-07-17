@@ -102,6 +102,11 @@
         <p class="eyebrow">Paddles</p>
         <h2>Team Purse Table</h2>
       </div>
+      <button class="btn ghost compact refresh-bids-btn" type="button" (click)="refreshBids()"
+        [disabled]="refreshLoading || !sync.enabled"
+        [title]="sync.enabled ? 'Refresh latest bids from Firebase' : 'Firebase sync is not available'">
+        {{ refreshLoading ? 'Refreshing...' : 'Refresh' }}
+      </button>
     </div>
     <div class="purse-list">
       @for (team of store.state().franchises; track team.id) {
